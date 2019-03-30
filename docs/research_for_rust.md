@@ -25,13 +25,12 @@
 
 ## 参考资料
 
-- Stanford CS140e - Operating Systems
-  https://cs140e.sergio.bz/
-- Rust Documentation
-  https://doc.rust-lang.org/stable/
-- Writing an OS in Rust
-  https://os.phil-opp.com/
-- rust-embedded/rust-raspi3-OS-tutorials: Rust bare-metal and OS tutorials on the Raspberry Pi 3
-  https://github.com/rust-embedded/rust-raspi3-OS-tutorials
-- Stanford: An experimental course on operating systems
-  https://www.reddit.com/r/cs140e/
+- [Stanford CS140e - Operating Systems](https://cs140e.sergio.bz/)
+
+- [Rust Documentation](https://doc.rust-lang.org/stable/)
+
+- [Writing an OS in Rust](https://os.phil-opp.com/)
+
+- [rust-embedded/rust-raspi3-OS-tutorials: Rust bare-metal and OS tutorials on the Raspberry Pi 3](https://github.com/rust-embedded/rust-raspi3-OS-tutorials)
+
+- [Stanford: An experimental course on operating systems](https://www.reddit.com/r/cs140e/)
