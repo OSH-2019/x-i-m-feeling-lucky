@@ -93,7 +93,10 @@
 
 Rust 是一个着重于安全性（特别是并发安全）的多重范型编程语言。Rust 在语法上和 C++ 类似，但是能够在保持高性能的同时提供更好的内存安全性。
 
-![Rust programming language black logo.svg](research_for_rust.assets/144px-Rust_programming_language_black_logo.svg.png)
+
+<p align="center">
+<img alt="Redox" width="180" src="research_for_rust.assets/144px-Rust_programming_language_black_logo.svg.png">
+</p>
 
 Rust 由 Mozila Research 的 Graydon Hoare 设计，Dave Herman、Brendan Eich 亦有贡献。
 
