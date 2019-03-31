@@ -15,9 +15,52 @@
 
 ### 树莓派上的操作系统
 
+树莓派的CPU基于ARM架构，运行在其上的操作系统需要针对这种架构和硬件配置做出一定的修改和优化。而许多常见的操作系统都有为树莓派ARM架构专门开发的版本。
+
+其中的一些通用系统简介如下：
+
+- **Raspbian**([homepage](http://www.raspbian.org/))
+
+  树莓派的“官方“通用操作系统。它基于Debian(Linux的一个版本)而特别为树莓派开发。事实上它不仅仅是一个OS，其内部配置了相当多的应用软件，涵盖办公、开发、教育等各个方面。其兼容性和性能非常优秀，是当前树莓派上最实用最广泛的操作系统。
+
+- **Ubuntu Mate**([homepage](https://ubuntu-mate.org/))
+
+  Ubuntu Mate针对树莓派1和2的发行版本，界面个性美观。
+
+- **Ubuntu Snappy Core**([homepage](https://www.ubuntu.com/core))
+
+  Ubuntu针对物联网(IoT)的一个发行版本，兼容树莓派。主要面向开发者。
+
+- **CentOS**([homepage](https://www.centos.org/))
+
+  CentOS针对ARM的发行版，兼容树莓派。
+
+- **Windows 10 IoT**([homepage](https://developer.microsoft.com/en-us/windows/iot))
+
+  这是Windows在树莓派上的特别版本，兼容Windows 10的桌面风格。它不是完整的Windows版本，主要面向开发者。
+
+- **FreeBSD**([homepage](https://www.freebsd.org/)) 
+
+  FreeBSD针对树莓派的发行版。
+
+- **Kali**([homepage](https://www.kali.org/))
+
+  基于Debian的Kali操作系统针对树莓派的发行版。它内置了一系列安全性测试工具，可执行渗透测试，非常适合注重安全性测试的程序员和开发者。
+
+- **Pidora**([homepage](http://www.pidora.ca/))
+
+  在Fedora Remix 基础上针对树莓派优化过的操作系统。
+
+- **Arch Linux**([homepage](https://archlinuxarm.org/))
+
+  Arch Linux针对ARM的发行版，兼容树莓派。其特点为轻量级、使用简单、软件更新速度快。
+
+- **RISC OS**([homepage](https://www.riscosopen.org))
+
+  它基于RISC精简指令集，是相当简洁的操作系统。它比当今的绝大多数操作系统要简单，仅支持单用户模式，且在安全性上没有太多保障，还有很大的提升空间。 
 
 
-
+……
 
 
 
