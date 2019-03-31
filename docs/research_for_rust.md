@@ -37,7 +37,7 @@
 
 - **Windows 10 IoT**([homepage](https://developer.microsoft.com/en-us/windows/iot))
 
-  这是Windows在树莓派上的特别版本，兼容Windows 10的桌面风格。它不是完整的Windows版本，主要面向开发者。
+  这是Windows针对物联网(IoT)的特别版本，兼容Windows 10的桌面风格,兼容树莓派。它不是完整的Windows版本，主要面向开发者。
 
 - **FreeBSD**([homepage](https://www.freebsd.org/)) 
 
