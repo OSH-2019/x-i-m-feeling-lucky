@@ -156,6 +156,10 @@ IPFS 结合了以下这些成功的 P2P 系统的特性
     3. 通过选择长期在线节点来抵抗各种攻击；
     4. 在包括 Gnutella 和 BitTorrent 在内的对等应用中广泛使用，形成了超过 2000 万个节点的网络。
 
+  详解见[参考文献](## 五、参考文献)中相关内容。一张形象图如下：
+
+  ！[](files/1920px-DHT_en.svg.png)
+
 - BitTorrent
 
     BitTorrent 是一个广泛成功应用的点对点共享文件系统，它可以在存在不信任的对等节点（群集）的协作网络中分发各自的文件数据片。从 BitTorrent 和它的生态系统的关键特征， IPFS 参考了如下特点：
@@ -173,10 +177,211 @@ IPFS 结合了以下这些成功的 P2P 系统的特性
     5. 版本变更只是更新引用或者添加对象；
     6. 分发版本变更给其他用户只是简单的传输对象和更新远程引用。
 
-#### IPFS 的应用
-1. 可以降低存储和带宽成本。如 [Dtube](https://d.tube)，它是一个搭建在 Steemit 上的去中心化视频播放平台,其用户上传的视频文件都经过 IPFS 协议进行存储,具有唯一标识。相较于传统视频网站，它降低了同资源冗余程度，同时大大节约了海量用户在播放视频时所产生的带宽成本。
-2. 解决文件重复存储的问题。IPFS 会把存储文件的做哈希计算，相同的两个文件哈希值相同。所以，用户只需要使用相同的哈希值，就可以访问那个文件，这个哈希值就是文件的地址。比如不同语言字幕的电影，影音部分是相同的，只有字幕部分不一样，当两个不同国家的人都在上传同一部电影的，这些文件在分块（block）的时候，很有可能有大部分块的哈希值是一致的，这些块在 IPFS 上就只会存储一份。
+#### IPFS 具体实现
+- IPFS 协议栈
 
+	IPFS 协议栈由七层负责不同功能的子协议构成：
+
+  ![](files/xieyizhan.png)
+
+- IPFS 身份、网络、路由
+
+  所有节点在 IPFS 网络中都要一个唯一的 NodeId 进行标识，其实就是一个公钥的哈希，然而为了增加攻击者的成本，IPFS 使用了 S/Kademlia 中提到的算法增加创建新身份的成本，源码定义如下：
+
+  ```go
+  difficulty = <integer parameter>
+  n = Node{}
+  do {
+      n.PubKey,n.PrivKey = PKI.genKeyPair()
+      n.NodeId = hash(n.PubKey)
+      p = count_preceding_zero_bits(hash(n.NodeId))
+  } while (p<difficulty)
+  ```
+
+  每一个节点在 IPFS 网络中由 Node 结构体来表示，其中只包含 NodeId 以及一个公私钥对：
+
+  ```go
+  type NodeId Multihash
+  type Multihash []byte  //子描述加密哈希摘要
+  type PublicKey []byte
+  type PrivateKey []byte // 子描述的私钥
+  type Node struct {
+      NodeId NodeID
+      PubKey PublicKey
+      PriKey PrivateKey
+  }
+  ```
+
+  IPFS 的网络通信模型是遵循覆盖网络（Overlay Network）的理念设计的。
+
+  IPFS 节点需要一个路由系统，可用于查找：
+
+   - 同伴节点的网络地址。
+   - 服务特定对象的对等节点。
+
+  IPFS 路由层数据结构使用的是 S/Kademlia 和 Coral 技术的分布式松散哈希表（DSHT）。
+
+- IPFS 交换层---BitSwap 协议
+
+  > IPFS中BitSwap协议旨在通过对等节点间交换数据块来分发数据，受到BitTorrent技术的启发，每个对等节点在下载的同时不断向其他对等节点上传已下载的数据。和BitTorrent协议不同的是，BitSwap不局限于一个种子文件中的数据块。BitSwap协议中存在一个数据交换市场，这个市场包括各个节点想要获取的所有块数据，这些块数据可能来自文件系统中完全不相关的文件，同时这个市场是由IPFS网络中所有节点组成的。这样的数据市场很需要创造加密数字货币来实现可信价值交换，也就是得有激励层Filecoin。
+
+  - BitSwap 协议的数据结构
+
+  源码结构如下：
+
+  ```go
+  type BitSwap struct {
+    ledgers map[NodeId]Ledger   //节点账单
+    active map[NodeId]Peer      //当前已经连接的对等点
+    need_list []Multihash       //此节点需要的块数据校验列表
+    have_list []Multihash       //此节点已收到块数据校验列表
+  }
+  ```
+
+  其中最主要的部分就是need_list 和 want_list，就是节点想要和已有的块列表。两个对等节点通过这两个列表互通有无。可以看出，两个节点都发送BitSwap message消息，节点对等， HTTP request/response 不同。
+
+  IPFS 网络中使用 Bitswap 协议获取数据块一个最大的特点是，请求的数据块是跨文件的，这个是跟 BitTorrent 最大的区别所在，因为在 BitTorrent 中，块请求都是基于文件的，一个 Peer Swarm 都是对同一个文件（目录）进行数据传输。而在 IPFS 中，由于数据请求是基于块的，任何类型的数据块，只要其哈希值一样，都可以拿为己用，一个 Peer Swarm 对应的是整个 IPFS 网络中的数据，因此所有的数据块都可以被用来使用，实现真正的跨文件数据交换。这不仅大大减少了数据的冗余，还大大提高的块检索的效率。显然，BitSwap 的效率比 BitTorrent 更高。
+
+  ![](files/bitswap bittorrent compare.png)
+
+  - Design Engine 与信用体系
+
+  对于P2P网络，有一个很重要的问题：如何激励大家分享自己的数据，每一个P2P软件都有自己专属的数据分享策略，IPFS也是如此。
+
+  Decision Engine 是 BitSwap 协议的信用管理模块。它管理一个请求队列，使用一个账本来记录节点之间的传输记录，并以此决定是否响应对端的下载请求。
+
+  值得注意的是，账本，即信用记录是在两个节点之间的。比如，节点 A 向节点 B 发送过数据，那么 A 就拥有对 B 的 Credit，相反，B 欠了 A 的 Debt。如果 A 对 B 拥有的 Credit 超过 Debt，那么下次其向 B 发出 WantList 请求块数据的时候，B 就会立刻反馈数据。据此可以计算节点的负债率（debt ratio，r）和发送率P。
+
+  ```
+  debtRatio = bytes_sent/(bytes_recv + 1)
+
+  P (send|r) = 1− 1/(1+exp(6−3r))
+  ```
+
+  负债率达到2的时候发送率会急剧下降。如果一个节点只接受数据不分享数据，别人发送给它数据的概率会越来越低。
+
+  ![](files/send-debt_ratio_function.jpg)
+
+  Decision Engine 会记录下来和其他节点通信的账单（数据收发），可以保持节点间数据交换的历史和防止篡改。当两个节点之间建立连接的时候，BitSwap 会相互交换账单信息，如果账单不匹配，则清除重新记账。恶意节点可能会故意“丢失”账单，以希望清除掉自己的债务。其它交互节点会把这些都记下来，如果总是发生，节点就会被拒绝。
+
+- Merkel DAG ,对象层与文件层
+
+  Merkle DAG 是 IPFS 系统的核心概念之一。Merkle DAG 的全称是 Merkle directed acyclic graph（默克有向无环图）。它是在 Merkle tree 基础上构建的，Merkle tree 是由美国计算机学家 merkle 于1979年申请的专利。
+
+  Merkle DAG拥有如下的功能：
+
+  - 内容寻址：使用多重哈希来唯一识别一个数据块的内容
+  - 防篡改：可以方便的检查哈希值来确认数据是否被篡改
+  - 去重：由于内容相同的数据块哈希是相同的，可以很容去掉重复的数据，节省存储空间
+
+  可以看出，这些特征和上文中 Bitswap “只要一样的数据块，都为己所用”的特征是密切相关的，因为在 IPFS 看来，其哈希值是完全一样的，就是完全相同的数据块。而这也成为了 IPFS 的重要特征。
+
+  下面介绍文件与块。向 IPFS 上传了一张图片，使用
+
+  ```
+  ipfs ls -v <block hash>
+  ```
+
+  查看文件分块情况。输出：
+
+  ```shell
+  $ ipfs ls -v QmVVQhg7F4h32jVM8moKj54bThYMYsQB25MvEZ6ziaVwBQ
+  Hash                                           Size   Name
+  QmSDGUhzNAh6ybv5YsikH1h1vDM48fa5y777eUHTw6S3F3 262144
+  QmULX45esT6454xEACK1EuseMLVhPgk2LX7no6sXVeaUSA 262144
+  QmZghb6Ruec4utFG8dCRxYyfXcFZLGHznj3Kmk2aZpWR8t 262144
+  QmQvxZNhSw3upNxL4cpyfRPm4aCnJnj2U1yPnb2kg2LNQc 262144
+  QmZdqZMxPz5dLeNHHdWfgvY2GRb41J195jr5Xk5L7HGD5s 195672
+  ```
+
+  可见，可以看到文件被分成了15个block。每个block大小时256k（除了最后一个）。
+  block的数据结构：
+
+  ```go
+  type IPFSLink struct {
+  Name string // link 的名字
+  Hash Multihash // 数据的加密哈希
+  Size int // 数据大小
+  }
+  Type IPFSObject struct {
+  links []IPFSLink // link数组
+  data []byte // 数据内容
+  }
+  ```
+
+  他包含了数据块的数据和到子块的链接。在上例里，文件本身存储在 QmVVQhg7F4h32jVM8moKj54bThYMYsQB25MvEZ6ziaVwBQ 块里，而 ls 命令输出的就是他链接的子块，即文件的全部内容。
+
+  分块之后一块的内容可能和其他已经存在的块相同，在 IPFS 中不区分这两个块，这就体现了块的去重。最后在 IPFS 里所有的块会互相链接形成 DAG ：
+
+  ![](files/merkel_dag.jpg)
+
+  便是 Merkel DAG。
+
+  - 直接操作 Merkle DAG
+
+    IPFS可以让我们直接操作Merkle DAG的数据，我们可以完全控制block里面的数据内容和结构，IPFS把Merkle DAG操作权限几乎全部下放给了开发者，开发者可以很容易构造出来自己的数据结构。
+
+  - IPFS是具备可以处理对象级别加密操作的。一个已加密的或者已签名的对象包装在一个特殊的框架里，此框架允许加密和验证原始字节。
+
+  ```go
+  type EncryptedObject struct {
+	  Object []bytes // 已加密的原始对象数据
+  	Tag []bytes    // 可选择的加密标识
+  	type SignedObject struct {
+  	Object []bytes  // 已签名的原始对象数据
+  	Signature []bytes // HMAC签名
+  	PublicKey []multihash // 多重哈希身份键值
+  }
+  ```
+
+  加密操作改变了对象的哈希值，定义一个不同的新的对象。IPFS自动的验证签名以及使用用户指定的钥匙链解密数据。加密数据的links也同样的被保护着，没有解密秘钥就无法遍历对象。也存在着一种现象，可能父对象使用了一个秘钥进行了加密，而子对象使用了另一个秘钥进行加密或者根本没有加密。这可以保证links共享对象安全。
+
+  - IPFS定义了一组对象，用于在Merkle DAG之上对版本化文件系统进行建模。这个对象模型类似于著名版本控制软件Git的数据结构：
+
+    - 块（block）：一个可变大小的数据块。
+    - 列表（list）：一个块或其他列表的集合。
+    - 树（tree）：块，列表或其他树的集合。
+    - 提交（commit）：树的版本历史记录中的快照。
+
+- IPFS 命名层
+
+> IPFS形成了一个内容可寻址的DAG对象，可以在IPFS网络中发布不可更改的数据，甚至可以追踪这些对象的版本历史记录。但这样会存在一个严重的问题，当数据对象的内容更新后，发生改变的还有内容地址的命名。我们需要一种能在易变环境中保持固定命名的方案，为此，IPFS的IPNS星际文件命名系统模块就闪亮登场了。
+
+  - 自验证命名
+  使用自验证的命名方案给了我们一种在加密环境下，在全局命名空间中，构架可自行认证名称的方式。模式如下：
+
+    - 通过 NodeId = hash(node.PubKey)，生成IPFS节点信息。
+    - 给每个用户分配一个可变的命名空间，由之前生成的节点ID信息作为地址名称，在此路径下： /ipns/ 。
+    - 一个用户可以在此路径下发布一个用自己私钥签名的对象，比如说： /ipns/XLF2ip4ii9x0wejs23HD2swlddVmas8kd0Ax/ 。
+    - 当其他用户获取对象时，他们可以检测签名是否与公钥和节点信息匹配，从而验证用户发布对象的真实性，达到可变状态的获取。
+
+  - 人类友好名称
+  使用哈希寻址大大增加了人类记忆、输入URL的难度。有两种解决方法：
+    - 对等节点链接
+    用户可以将其他用户节点的对象直接链接到自己的命名空间下。
+
+    - DNS TXT IPNS记录
+    在现有的DNS系统中添加TXT记录，这样能够通过域名访问IPFS网络中的文件对象。
+
+再往上便是在 IPFS 基础上搭建的各种应用项目。
+
+#### IPFS 的一些项目
+- 星际维基：建立在ipfs上的wikipedia
+
+![](files/IPFSwikipedia.PNG)
+
+- 亚历山大:去中心化的内容发布平台
+- dtube:利用ipf作为存储的视频分享网站
+- ipfs-search:基于ifp来说的搜索引擎
+- ipfs-share:基于ifp来说的文件分享
+- ipfs.pics:基于ifp来说的图片分享网站
 
 ## 五、参考文献
 - [IPFS 白皮书](https://github.com/ipfs/papers/raw/master/ipfs-cap2pfs/ipfs-p2p-file-system.pdf)
+- [IPFS Documentation](https://docs.ipfs.io/)
+- [go-ipfs](https://github.com/ipfs/go-ipfs)
+- [IPFS Alpha | Why We Must Distribute The Web](https://www.youtube.com/watch?v=skMTdSEaCtA)
+- [简书-IPFS 中的 BitSwap 协议](https://www.jianshu.com/p/f51b9c235ef0)
+- [InterPlanetary File System](https://en.wikipedia.org/wiki/InterPlanetary_File_System)
+- [分布式哈希表DHT及其变种](https://www.jianshu.com/p/a7a1c25f11a4)
+- [Distributed_hash_table](https://en.wikipedia.org/wiki/Distributed_hash_table)
