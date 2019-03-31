@@ -11,6 +11,30 @@
 
 使用 Rust 编程语言写一个能在树莓派上运行的操作系统。
 
+##### 硬件设备
+
+- 树莓派3B+（OSH 课程统一发放）；
+
+- Micro SD 卡 （OSH课程统一发放）；
+
+- USB to TTL 转换器；
+
+- 读卡器。
+
+##### 学习资源
+
+- OSH 课程和教材；
+- [CS140e 课程](<https://cs140e.sergio.bz/>)；
+- [Writing an OS in Rust](https://os.phil-opp.com/second-edition/) By Philipp Oppermann；
+- [Rust 官方文档](https://doc.rust-lang.org/stable/)；
+- [rust-raspi3-OS-tutorials](<https://github.com/rust-embedded/rust-raspi3-OS-tutorials>) on Github.com；
+- [CS140e](<https://www.reddit.com/r/cs140e/>) on Reddit.com。
+
+##### 目标
+
+在树莓派上完成一个操作系统的基本组成（引导、文件系统、内存系统、进程管理等），先达成能上机跑起来的目标（连接显示器，开机后能够显示一个Shell，提供对常用命令的支持）。若仍有余力，将在某些部分（如进程调度、文件系统）上做进一步优化。**本项目重点不在做出什么新东西，做出什么比 [Redox](<https://www.redox-os.org/>) 更好的东西，而是试图通过“造轮子”的过程，将 OSH 课上学的东西用起来。**
+
+
 ## 项目背景
 
 ### 树莓派上的操作系统
@@ -85,11 +109,21 @@ Rust 编程语言最大的亮点是安全性，正如其官网所说。
 
 > Rust’s rich type system and ownership model guarantee memory-safety and thread-safety — and enable you to eliminate many classes of bugs at compile-time.
 
-Rust 的以下特性保证了它的安全。
+Rust 的许多特性保证了它的安全性，现列举部分如下。
 
 ##### Memory safety
 
-内存安全是 Rust 的一个设计目标，它不允许在 Safe Rust（和它相对的是 Unsafe Rust，Rust 默认运行方式是前者）中出现空指针、野指针和数据竞争。
+内存安全是 Rust 的一个设计目标，它不允许在 Safe Rust（和它相对的是 Unsafe Rust，Rust 默认运行方式是前者）中出现空指针、野指针和数据竞争。数据只能通过几种固定的方式初始化。Rust 没有空值`Null`，而是提供了`Option`枚举类型，它可以是`Some`或`None`两种状态之一，前者表示存在，后者表示不存在。Rust 放弃`Null`、使用`Option`的`None`表达不可用，这一选择确保了程序员必须对一个可能不可用的值做处理，否则 Rust 将会无法通过编译，这种“强制”措施保证了程序的安全性。
+
+##### Memory management
+
+Rust 既没有像 C、C++ 一样使用手工管理内存的方式，也没有像 Java、Go 、Python 等语言一样使用自动垃圾回收系统，而是通过加入`lifetime`和`ownship`特性，实现了内存的自动回收。
+
+##### Ownership
+
+Rust 中，所有的值都有一个 owner，值可以通过不可修改的引用（`&T`）、可修改的引用（`&mut T`）或所有权传递（`T`）来传递。这种`ownership`机制使得程序能够在编译的时候被 complier 检查，从而实现更安全的内存管理。
+
+
 
 #### 当前基于 Rust 的 OS 的对比分析
 
@@ -209,13 +243,15 @@ Redox 不仅仅是个内核，而是个全功能的操作系统，它提供了�
 
 ## 前瞻性分析
 
-### 安全性
+### Rust is good for developing an OS
 
-Rust 语言自身的特点使得基于其的 OS 更安全。
+某种意义上，Rust 是当前最适合开发操作系统的编程语言：C 和 C++ 有些古老，在内存安全性等方面欠佳，大多数现代编程语言又不能胜任编写底层代码，而 Rust 语言既能像 C 和 C++ 一样深入底层，其自身的特点又使得基于其的 OS 更安全。
 
+当前在操作系统开发领域，C 和 C++ 历史悠久，其潜力几乎已经被开发完，但是 Rust 作为一种全新的更安全的编程语言，大大提高了操作系统开发的天花板。当前较为成熟的 Redox OS 已经证明了 Rust 开发操作系统的可行性。
 
+### Why this project?
 
-
+这个项目看起来不那么新奇，而且还有很大的“造轮子”的嫌疑，但是它作为和课程密切相关的一个项目，一方面能够巩固运用我们在 OSH 课程上学习的知识，让我们对操作系统有一个更全面、深入的理解；另一方面，这个项目起到一个引子的作用：我们也许时间精力不足，做出来的东西简单、粗糙，用户交互只有一个 Shell ......但是有了这个项目的基础，日后继续开发出功能更完善、界面更好看的系统也许只是个时间问题。
 
 ## 参考资料
 
