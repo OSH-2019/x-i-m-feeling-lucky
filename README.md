@@ -8,7 +8,7 @@
 
 ## 项目
 ### A. Implementing an OS on a Raspberry Pi 3 with Rust
-### B. Enhanced Distributed file system
+### B. Enhanced Distributed File System
 
 
 
