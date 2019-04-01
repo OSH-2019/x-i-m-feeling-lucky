@@ -158,7 +158,7 @@ IPFS 结合了以下这些成功的 P2P 系统的特性
 
   详解见[参考文献](## 五、参考文献)中相关内容。一张形象图如下：
 
-  ！[](files/1920px-DHT_en.svg.png)
+  ！[](research_for_DFS.assets/1920px-DHT_en.svg.png)
 
 - BitTorrent
 
@@ -182,7 +182,7 @@ IPFS 结合了以下这些成功的 P2P 系统的特性
 
 	IPFS 协议栈由七层负责不同功能的子协议构成：
 
-  ![](files/xieyizhan.png)
+  ![](research_for_DFS.assets/xieyizhan.png)
 
 - IPFS 身份、网络、路由
 
@@ -242,7 +242,7 @@ IPFS 结合了以下这些成功的 P2P 系统的特性
 
   IPFS 网络中使用 Bitswap 协议获取数据块一个最大的特点是，请求的数据块是跨文件的，这个是跟 BitTorrent 最大的区别所在，因为在 BitTorrent 中，块请求都是基于文件的，一个 Peer Swarm 都是对同一个文件（目录）进行数据传输。而在 IPFS 中，由于数据请求是基于块的，任何类型的数据块，只要其哈希值一样，都可以拿为己用，一个 Peer Swarm 对应的是整个 IPFS 网络中的数据，因此所有的数据块都可以被用来使用，实现真正的跨文件数据交换。这不仅大大减少了数据的冗余，还大大提高的块检索的效率。显然，BitSwap 的效率比 BitTorrent 更高。
 
-  ![](files/bitswap bittorrent compare.png)
+  ![](research_for_DFS.assets/bitswap bittorrent compare.png)
 
   - Design Engine 与信用体系
 
@@ -260,7 +260,7 @@ IPFS 结合了以下这些成功的 P2P 系统的特性
 
   负债率达到2的时候发送率会急剧下降。如果一个节点只接受数据不分享数据，别人发送给它数据的概率会越来越低。
 
-  ![](files/send-debt_ratio_function.jpg)
+  ![](research_for_DFS.assets/send-debt_ratio_function.jpg)
 
   Decision Engine 会记录下来和其他节点通信的账单（数据收发），可以保持节点间数据交换的历史和防止篡改。当两个节点之间建立连接的时候，BitSwap 会相互交换账单信息，如果账单不匹配，则清除重新记账。恶意节点可能会故意“丢失”账单，以希望清除掉自己的债务。其它交互节点会把这些都记下来，如果总是发生，节点就会被拒绝。
 
@@ -313,7 +313,7 @@ IPFS 结合了以下这些成功的 P2P 系统的特性
 
   分块之后一块的内容可能和其他已经存在的块相同，在 IPFS 中不区分这两个块，这就体现了块的去重。最后在 IPFS 里所有的块会互相链接形成 DAG ：
 
-  ![](files/merkel_dag.jpg)
+  ![](research_for_DFS.assets/merkel_dag.jpg)
 
   便是 Merkel DAG。
 
@@ -348,7 +348,7 @@ IPFS 结合了以下这些成功的 P2P 系统的特性
 > IPFS形成了一个内容可寻址的DAG对象，可以在IPFS网络中发布不可更改的数据，甚至可以追踪这些对象的版本历史记录。但这样会存在一个严重的问题，当数据对象的内容更新后，发生改变的还有内容地址的命名。我们需要一种能在易变环境中保持固定命名的方案，为此，IPFS的IPNS星际文件命名系统模块就闪亮登场了。
 
   - 自验证命名
-  使用自验证的命名方案给了我们一种在加密环境下，在全局命名空间中，构架可自行认证名称的方式。模式如下：
+    使用自验证的命名方案给了我们一种在加密环境下，在全局命名空间中，构架可自行认证名称的方式。模式如下：
 
     - 通过 NodeId = hash(node.PubKey)，生成IPFS节点信息。
     - 给每个用户分配一个可变的命名空间，由之前生成的节点ID信息作为地址名称，在此路径下： /ipns/ 。
@@ -356,7 +356,7 @@ IPFS 结合了以下这些成功的 P2P 系统的特性
     - 当其他用户获取对象时，他们可以检测签名是否与公钥和节点信息匹配，从而验证用户发布对象的真实性，达到可变状态的获取。
 
   - 人类友好名称
-  使用哈希寻址大大增加了人类记忆、输入URL的难度。有两种解决方法：
+    使用哈希寻址大大增加了人类记忆、输入URL的难度。有两种解决方法：
     - 对等节点链接
     用户可以将其他用户节点的对象直接链接到自己的命名空间下。
 
@@ -368,7 +368,7 @@ IPFS 结合了以下这些成功的 P2P 系统的特性
 #### IPFS 的一些项目
 - 星际维基：建立在ipfs上的wikipedia
 
-![](files/IPFSwikipedia.PNG)
+![](research_for_DFS.assets/IPFSwikipedia.PNG)
 
 - 亚历山大:去中心化的内容发布平台
 - dtube:利用ipf作为存储的视频分享网站

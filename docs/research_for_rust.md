@@ -1,13 +1,6 @@
-# OS on Raspberry Pi with Rust
+# Implementing an OS on a Raspberry Pi 3 with Rust
 
-## 1. 小组成员
-
-- 刘云飞 PB17051044
-- 李维晟 PB17000100
-- 汪若辰 PB17000098
-- 余磊 PB17051053
-
-## 2. 项目简介
+## 1. 项目简介
 
 使用 Rust 编程语言写一个能在树莓派上运行的操作系统。
 
@@ -35,9 +28,9 @@
 在树莓派上完成一个操作系统的基本组成（引导、文件系统、内存系统、进程管理等），先达成能上机跑起来的目标（连接显示器，开机后能够显示一个Shell，提供对常用命令的支持）。若仍有余力，将在某些部分（如进程调度、文件系统）上做进一步优化。**本项目重点不在做出什么新东西，做出什么比 [Redox](<https://www.redox-os.org/>) 更好的东西，而是试图通过“造轮子”的过程，将 OSH 课上学的东西用起来。**
 
 
-## 3. 项目背景
+## 2. 项目背景
 
-### 3.1 树莓派上的操作系统
+### 2.1 树莓派上的操作系统
 
 树莓派是一种小型、轻量级而功能齐全的嵌入式设备，由于其相对低廉的价格和优质的生态成为了良好的教学用设备和极客们大显身手的舞台。
 
@@ -91,24 +84,24 @@
 
 不过随着嵌入式系统的发展，其在我们生活中与计算机的地位将会越来越高。彼时就一定得更加认真地去看待它相关的安全性问题。我们希望从现在就做一些相关的尝试，针对树莓派这样一种嵌入式设备本身使用Rust语言开发一个操作系统，从实现的层面上规避许多安全性的问题并对Rust的硬件进行一定程度上的优化工作。
 
-### 3.2 Rust 编程语言与操作系统
+### 2.2 Rust 编程语言与操作系统
 
-#### 3.2.1 Rust 语言简介
+#### 2.2.1 Rust 语言简介
 
 Rust 是一个着重于安全性（特别是并发安全）的多重范型编程语言。Rust 在语法上和 C++ 类似，但是能够在保持高性能的同时提供更好的内存安全性。
 
 
 <p align="center">
-<img alt="Redox" width="180" src="research_for_rust.assets/144px-Rust_programming_language_black_logo.svg.png">
+<img alt="Redox" width="180" src="research_for_Rust.assets/144px-Rust_programming_language_black_logo.svg.png">
 </p>
 
 Rust 由 Mozila Research 的 Graydon Hoare 设计，Dave Herman、Brendan Eich 亦有贡献。
 
 Rust 在 Stack Overflow 的 [2016](https://stackoverflow.com/insights/survey/2016#technology-most-loved-dreaded-and-wanted)、[2017](https://stackoverflow.com/insights/survey/2017#most-loved-dreaded-and-wanted)、[2018](https://insights.stackoverflow.com/survey/2018/#most-loved-dreaded-and-wanted) 年开发者调查中，是“最被喜爱的编程语言”。
 
-![1554027955391](research_for_rust.assets/1554027955391.png)
+![1554027955391](research_for_Rust.assets/1554027955391.png)
 
-#### 3.2.2 Why is it Safe?
+#### 2.2.2 Why is it Safe?
 
 Rust 编程语言最大的亮点是安全性，正如其官网所说。
 
@@ -130,7 +123,7 @@ Rust 中，所有的值都有一个 owner，值可以通过不可修改的引用
 
 
 
-#### 3.2.3 当前基于 Rust 的 OS 的对比分析
+#### 2.2.3 当前基于 Rust 的 OS 的对比分析
 
 当前基于 Rust 的操作系统主要有以下这些。（数据来源：[flosse/rust-os-comparison: A comparison of operating systems written in Rust](https://github.com/flosse/rust-os-comparison)）
 
@@ -172,10 +165,10 @@ Rust 中，所有的值都有一个 owner，值可以通过不可修改的引用
 | **Quasar**      | x86_64          | ?                        | no      | ?                          | ?                | no        | no            | 2            | ?           | ?                          |
 | **Tifflin**     | x86_64/amd64    | almost                   | yes     | Monolithic                 | ?                | ?         | yes           | 1            | ISO9660     | 2-Clause-BSD               |
 
-#### 3.2.4 Redox OS
+#### 2.2.4 Redox OS
 
 <p align="center">
-<img alt="Redox" width="346" src="research_for_rust.assets/68747470733a2f2f6769746c61622e7265646f782d6f732e6f72672f7265646f782d6f732f6173736574732f7261772f6d61737465722f6c6f676f732f7265646f782f6c6f676f2e706e67.png">
+<img alt="Redox" width="346" src="research_for_Rust.assets/68747470733a2f2f6769746c61622e7265646f782d6f732e6f72672f7265646f782d6f732f6173736574732f7261772f6d61737465722f6c6f676f732f7265646f782f6c6f676f2e706e67.png">
 </p>
 
 在众多基于 Rust 的操作系统中，Redox OS 当之无愧是目前最成熟的操作系统之一，基于此，我们选择它做简要介绍。
@@ -197,7 +190,7 @@ Redox 有以下特点。
 
 Redox 的桌面环境 Orbital 也有着成熟、现代的 UI 设计，截图如下。
 
-![img](research_for_rust.assets/large.png)
+![img](research_for_Rust.assets/large.png)
 
 
 
@@ -205,21 +198,21 @@ Redox 不仅仅是个内核，而是个全功能的操作系统，它提供了�
 
 就在几天前（2019年3月24日），[Redox OS 0.5.0](https://www.redox-os.org/news/release-0.5.0/) 发布。
 
-![1554029449257](research_for_rust.assets/1554029449257.png)
+![1554029449257](research_for_Rust.assets/1554029449257.png)
 
 新的 Redox OS 将 Relibc 用做默认 C 语言库（Relibc 是一个用 Rust 编程语言编写的C语言库的实现）。Redox OS 0.5 还包括对其事件系统的改进、完成对 Pthreads 的支持、对 LLVM 和使用 LLVM 的项目（如Mesa 和 LLVMpipe）的更好支持、对 EFI 的改进等等。（引自 [Redox OS 0.5发布](https://www.linuxidc.com/Linux/2019-03/157707.htm)）
 
 
 
 
-## 4. 立项依据
+## 3. 立项依据
 
-### 4.1 项目名称
+### 3.1 项目名称
 
 **基于 Rust 语言开发可在树莓派机器上运行的操作系统**。
 
 
-### 4.2 项目介绍
+### 3.2 项目介绍
 
 
 如名称所示，我们希望利用 Rust 在语法上内禀的安全性来尝试开发一个较为完整的操作系统，并使之可以在树莓派 3B+ 机器上正常运行。
@@ -232,7 +225,7 @@ Redox 不仅仅是个内核，而是个全功能的操作系统，它提供了�
 我们会将目标操作系统的安全性与其在树莓派上的运行作为首要的关注点。
 
 
-### 4.3 项目依据与预期
+### 3.3 项目依据与预期
 
 
 如背景中所介绍，有许多基于 ARM 架构的操作系统可以在树莓派上运行，也有一些着眼于 Rust 的安全性而实现的操作系统问世，不过目前能综合两者，即在树莓派这类嵌入式设备上运行的基于 Rust 的操作系统还很少。我们认为可以汲取这些开发者的经验和课本上学习的操作系统知识，将其用于我们的 Rust 的系统实现。
@@ -245,19 +238,19 @@ Redox 不仅仅是个内核，而是个全功能的操作系统，它提供了�
 - 熟练掌握 Rust 语言的开发技术。
 
 
-## 5. 前瞻性分析
+## 4. 前瞻性分析
 
-### 5.1 Rust is good for developing an OS
+### 4.1 Rust is good for developing an OS
 
 某种意义上，Rust 是当前最适合开发操作系统的编程语言：C 和 C++ 有些古老，在内存安全性等方面欠佳，大多数现代编程语言又不能胜任编写底层代码，而 Rust 语言既能像 C 和 C++ 一样深入底层，其自身的特点又使得基于其的 OS 更安全。
 
 当前在操作系统开发领域，C 和 C++ 历史悠久，其潜力几乎已经被开发完，但是 Rust 作为一种全新的更安全的编程语言，大大提高了操作系统开发的天花板。当前较为成熟的 Redox OS 已经证明了 Rust 开发操作系统的可行性。
 
-### 5.2 Why this project?
+### 4.2 Why this project?
 
 这个项目看起来不那么新奇，而且还有很大的“造轮子”的嫌疑，但是它作为和课程密切相关的一个项目，一方面能够巩固运用我们在 OSH 课程上学习的知识，让我们对操作系统有一个更全面、深入的理解；另一方面，这个项目起到一个引子的作用：我们也许时间精力不足，做出来的东西简单、粗糙，用户交互只有一个 Shell ......但是有了这个项目的基础，日后继续开发出功能更完善、界面更好看的系统也许只是个时间问题。
 
-## 6. 参考资料
+## 5. 参考资料
 
 - [Stanford CS140e - Operating Systems](https://cs140e.sergio.bz/)
 
