@@ -1,5 +1,7 @@
 # Implementing an OS on a Raspberry Pi 3 with Rust
 
+[TOC]
+
 ## 1. 项目简介
 
 使用 Rust 编程语言写一个能在树莓派上运行的操作系统。
