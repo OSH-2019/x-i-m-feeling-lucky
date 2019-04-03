@@ -94,14 +94,14 @@ Rust 是一个着重于安全性（特别是并发安全）的多重范型编程
 
 
 <p align="center">
-<img alt="Redox" width="180" src="research_for_Rust.assets/144px-Rust_programming_language_black_logo.svg.png">
+<img alt="Redox" width="180" src="research_for_Rust.assets/rust_logo.png">
 </p>
 
 Rust 由 Mozila Research 的 Graydon Hoare 设计，Dave Herman、Brendan Eich 亦有贡献。
 
 Rust 在 Stack Overflow 的 [2016](https://stackoverflow.com/insights/survey/2016#technology-most-loved-dreaded-and-wanted)、[2017](https://stackoverflow.com/insights/survey/2017#most-loved-dreaded-and-wanted)、[2018](https://insights.stackoverflow.com/survey/2018/#most-loved-dreaded-and-wanted) 年开发者调查中，是“最被喜爱的编程语言”。
 
-![1554027955391](research_for_Rust.assets/1554027955391.png)
+![1554027955391](research_for_Rust.assets/stat.png)
 
 #### 2.2.2 Why is it Safe?
 
@@ -170,7 +170,7 @@ Rust 中，所有的值都有一个 owner，值可以通过不可修改的引用
 #### 2.2.4 Redox OS
 
 <p align="center">
-<img alt="Redox" width="346" src="research_for_Rust.assets/68747470733a2f2f6769746c61622e7265646f782d6f732e6f72672f7265646f782d6f732f6173736574732f7261772f6d61737465722f6c6f676f732f7265646f782f6c6f676f2e706e67.png">
+<img alt="Redox" width="346" src="research_for_Rust.assets/redox_logo.png">
 </p>
 
 在众多基于 Rust 的操作系统中，Redox OS 当之无愧是目前最成熟的操作系统之一，基于此，我们选择它做简要介绍。
@@ -200,7 +200,7 @@ Redox 不仅仅是个内核，而是个全功能的操作系统，它提供了�
 
 就在几天前（2019年3月24日），[Redox OS 0.5.0](https://www.redox-os.org/news/release-0.5.0/) 发布。
 
-![1554029449257](research_for_Rust.assets/1554029449257.png)
+![1554029449257](research_for_Rust.assets/redox_new_version.png)
 
 新的 Redox OS 将 Relibc 用做默认 C 语言库（Relibc 是一个用 Rust 编程语言编写的C语言库的实现）。Redox OS 0.5 还包括对其事件系统的改进、完成对 Pthreads 的支持、对 LLVM 和使用 LLVM 的项目（如Mesa 和 LLVMpipe）的更好支持、对 EFI 的改进等等。（引自 [Redox OS 0.5发布](https://www.linuxidc.com/Linux/2019-03/157707.htm)）
 

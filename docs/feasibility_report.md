@@ -56,7 +56,7 @@
 
 ### 总体架构图
 
-![1554296083334](feasibility_report.assets/1554296083334.png)
+![1554296083334](feasibility_report.assets/architecture_v1.0.png)
 
 #### FS
 
