@@ -62,7 +62,7 @@
 
 ### 3.0 总体架构图
 
-![1554296083334](feasibility_report.assets/architecture_v2.0.png)
+![1554296083334](feasibility.assets/architecture_v2.0.png)
 
 #### 3.1 从硬件到软件
 
