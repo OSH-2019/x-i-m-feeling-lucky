@@ -2,26 +2,37 @@
 
 <!-- TOC -->
 
-- [可行性报告](#可行性报告)!
+- [可行性报告](#可行性报告)
     - [项目名称](#项目名称)
     - [项目简介](#项目简介)
     - [理论依据 (YL)](#理论依据-yl)
         - [Why Rust is safe?](#why-rust-is-safe)
-    - [](#)
+            - [Memory safety](#memory-safety)
+            - [ownership](#ownership)
+            - [lifetime](#lifetime)
+            - [option](#option)
+        - [Why Rust is better for making an OS?](#why-rust-is-better-for-making-an-os)
+            - [Why not assembly language?](#why-not-assembly-language)
+            - [Why not application programming  language?](#why-not-application-programming--language)
+            - [Why not C or C++?](#why-not-c-or-c)
+            - [Why Rust?](#why-rust)
     - [技术依据 (LWS WRC)](#技术依据-lws-wrc)
-        - [How Rust make OS safe?](#how-rust-make-os-safe)
-            - [Samples](#samples)
-                - [Postive](#postive)
-                    - [Redox](#redox)
-                    - [bkernel](#bkernel)
+        - [How Rust makes OS safe?](#how-rust-makes-os-safe)
+            - [Enforced memory safety](#enforced-memory-safety)
+            - [Thread and concurrency safety](#thread-and-concurrency-safety)
+            - [Zero cost safety](#zero-cost-safety)
+            - [`unsafe` 标签](#unsafe-标签)
+            - [Other Redox safety features](#other-redox-safety-features)
+            - [rust 操作系统可能的不足之处（目前）](#rust-操作系统可能的不足之处目前)
                 - [Negative](#negative)
                     - [Linux](#linux)
                     - [Windows](#windows)
+        - [Rust OS still fast](#rust-os-still-fast)
         - [Rust is feasible (Samples)](#rust-is-feasible-samples)
-                - [Redox](#redox-1)
-                - [bkernel](#bkernel-1)
+                - [Redox](#redox)
+                - [bkernel](#bkernel)
                 - [CS140e](#cs140e)
-    - [3 设计方案 (LYF)](#3-设计方案-lyf)
+    - [3. 设计方案 (LYF)](#3-设计方案-lyf)
         - [3.0 总体架构图](#30-总体架构图)
             - [3.1 从硬件到软件](#31-从硬件到软件)
             - [3.2 基本数据结构](#32-基本数据结构)
@@ -40,8 +51,10 @@
                 - [3.6.1 进程信息维护](#361-进程信息维护)
                 - [3.6.2 进程调度](#362-进程调度)
             - [3.7 其它部分](#37-其它部分)
+    - [参考资料](#参考资料)
 
 <!-- /TOC -->
+
 
 ## 项目名称
 
@@ -55,17 +68,57 @@
 
 ### Why Rust is safe?
 
+#### Memory safety
+
+内存安全是 Rust 的一个设计目标，它不允许在 Safe Rust（和它相对的是 Unsafe Rust，Rust 默认运行方式是前者）中出现空指针、野指针和数据竞争。数据只能通过几种固定的方式初始化。Rust 没有空值`Null`，而是提供了`Option`枚举类型，它可以是`Some`或`None`两种状态之一，前者表示存在，后者表示不存在。Rust 放弃`Null`、使用`Option`的`None`表达不可用，这一选择确保了程序员必须对一个可能不可用的值做处理，否则 Rust 将会无法通过编译，这种“强制”措施保证了程序的安全性。
+
 #### ownership
+
+Rust 中，所有的值都有一个 owner，值可以通过不可修改的引用（`&T`）、可修改的引用（`&mut T`）或所有权传递（`T`）来传递。这种`ownership`机制使得程序能够在编译的时候被 complier 检查，从而实现更安全的内存管理。
 
 #### lifetime
 
+
+
 #### option
 
-### Why Rust can make an OS?
+
+
+### Why Rust is better for making an OS?
 
 > Rust is a ***system*** programming language.
 
+和应用编程语言（application programming  language）不同，系统编程语言（system programming language）大多具有如下特性：
 
+1. 效率高，运行时（runtime）开销小；
+2. 具有很小的运行库，或者没有；
+3. 允许直接且“原始”地控制内存访问、控制流；
+4. 允许直接以汇编语言编写部分程序。
+
+过去的几十年，系统编程几乎一直都是 C 和 C++ 程序员的地盘，Rust 语言自 2015 年发布后，成为了一款对标 C++ 的系统编程语言。
+
+#### Why not assembly language?
+
+早期的操作系统是用汇编语言编写的，但是后来的操作系统，几乎很少有完全用汇编语言编写的，完全用汇编语言而且还用户友好（主要指有图形界面）的更是少之又少（如 [KolibriOS](http://kolibrios.org/en/index), [MenuetOS](http://www.menuetos.net/download.htm)），为什么开发者大多不选择汇编语言作为 OS 的开发语言呢，主要有两点原因：
+
+1. 工作量大。汇编语言可以看成是机器语言的助记表示，某种意义上写汇编和直接写机器代码没有本质区别，只不过前者更便于使用而已。汇编语言对寄存器和存储器的直接操控，使得其执行效率相比高级语言更高（这里的执行效率是指完成同样的功能所需要的底层操作的次数）。但是显然，汇编语言需要程序员去完成怎么存数据、怎么取数据、数据直接怎么计算等等操作，使得程序复杂度大大提高，可读性大大降低；
+2. 不可移植。汇编有“机器相关性”，这个特性一方面使得汇编语言能够针对特定机器写出特定的程序，更好地发挥机器的性能；但是另一方面也使得汇编程序的可移植性大大降低。
+
+基于这些原因，现代操作系统一般只在最底层部分（如内核和设备驱动程序）使用少量汇编语言，作为对 C 语言的补充，非底层部分则可以使用 C、C++、Java、Go 等语言开发。
+
+#### Why not application programming  language?
+
+从理论上来讲，任何编程语言都可以用来写操作系统——甚至脚本语言也可以通过先生成机器码的引导程序来加载自己的解释器，然后执行脚本，如基于 Python 的操作系统 [pythonix](<https://github.com/wfxpanisa/pythonix>)，但是可以做并不意味着就适合做。
+
+内核和设备驱动是操作系统的核心部分，而这两部分都需要和直接和硬件打交道，很多应用编程语言为了降低复杂度、提高安全性，选择隐藏底层细节，将硬件细节抽象化。这样在提高编程效率的同时，也决定了无法直接接触到底层硬件、无法对硬件高效管理，使得操作系统的运行效率不高。
+
+#### Why not C or C++?
+
+C 和 C++ 既作为高级语言能够很容易被人理解，又能提供足够的底层支持。支持对内存的直接访问，支持指针操作，没有运行时（runtime）开销，支持 ***Assemby code inline***（可以简单理解成支持在高级语言程序里面插入汇编代码）…… 因为种种优秀的特性，C 和 C++ 在操作系统领域被大量使用，如 Windows 的内核主要由 C 编写，其它部分主要由 C 和 C++ 编写；Mac 的内核主要使用 C 编写；Linux 大部分都是由 C 编写。 但是 C 和 C++ 写的程序也往往有一些很严重的问题，如空指针、野指针、数据竞争等等，在日益追求安全性的今天，C 和 C++ 的安全性问题成为了巨大的隐患。
+
+#### Why Rust?
+
+作为一个系统编程语言，Rust 既有 C 和 C++ 的速度和对底层的支持性，又有 ownship、lifetime、强类型、静态类型等等安全特性，使得其成为了当前最适合接替 C 和 C++ 来写操作系统的语言之一。
 
 ## 技术依据 (LWS WRC)
 
