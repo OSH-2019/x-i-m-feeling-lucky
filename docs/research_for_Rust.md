@@ -1,8 +1,33 @@
-# Implementing an OS on a Raspberry Pi 3 with Rust
+# 调研报告
 
-[TOC]
+<!-- TOC -->
+
+- [调研报告](#调研报告)
+    - [1. 项目简介](#1-项目简介)
+    - [2. 项目背景](#2-项目背景)
+        - [2.1 树莓派上的操作系统](#21-树莓派上的操作系统)
+        - [2.2 Rust 编程语言与操作系统](#22-rust-编程语言与操作系统)
+            - [2.2.1 Rust 语言简介](#221-rust-语言简介)
+            - [2.2.2 Why is it Safe?](#222-why-is-it-safe)
+                - [Memory safety](#memory-safety)
+                - [Memory management](#memory-management)
+                - [Ownership](#ownership)
+            - [2.2.3 当前基于 Rust 的 OS 的对比分析](#223-当前基于-rust-的-os-的对比分析)
+            - [2.2.4 Redox OS](#224-redox-os)
+    - [3. 立项依据](#3-立项依据)
+        - [3.1 项目名称](#31-项目名称)
+        - [3.2 项目介绍](#32-项目介绍)
+        - [3.3 项目依据与预期](#33-项目依据与预期)
+    - [4. 前瞻性分析](#4-前瞻性分析)
+        - [4.1 Rust is good for developing an OS](#41-rust-is-good-for-developing-an-os)
+        - [4.2 Why this project?](#42-why-this-project)
+    - [5. 参考资料](#5-参考资料)
+
+<!-- /TOC -->
 
 ## 1. 项目简介
+
+**Implementing an OS on a Raspberry Pi 3 with Rust**
 
 使用 Rust 编程语言写一个能在树莓派上运行的操作系统。
 
