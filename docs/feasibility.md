@@ -55,7 +55,7 @@
 
 ### Why Rust is safe?
 
-(Rust 语言特性 ownership、option<>、)
+(Rust 语言特性 ownership、option、)
 
 
 
@@ -67,23 +67,22 @@
 
 上节已经讨论了 rust 的一些安全特性，本节会介绍 rust 的这些特征如何在 OS 中体现出来。
 
-#### enforced memory safety
+#### Enforced memory safety
 
 先看一个 C 语言常见的 bug ：
 
 ```C
-int * func ( void ){
-
+int *func (void)
+{
     int num = 1234;
-    int * p = &num;
-    return p
-
+    int *p = &num;
+    return p;
 }
 
 p = func()
 ```
 
-这就是 C 语言悬空指针的问题。在调用func之后一段时间，尝试从该指针中读取num的值，可能仍然能够返回正确的值(1234)，但是任何接下来的函数调用会覆盖原来的栈为num分配的空间。这时候对指针 p 进行读，就有可能获得这个程序本来没有权限获得的数据；改写 p 指针的内存则可能带来更灾难的后果，甚至使得系统崩溃。
+这就是 C 语言悬空指针的问题。在调用 func 之后一段时间，尝试从该指针中读取 num 的值，可能仍然能够返回正确的值 (1234)，但是任何接下来的函数调用会覆盖原来的栈为 num 分配的空间。这时候对指针 `p` 进行读，就有可能获得这个程序本来没有权限获得的数据；改写 `p` 指针的内存则可能带来更灾难的后果，甚至使得系统崩溃。
 
 rust 是这么做的：
 
@@ -99,39 +98,34 @@ fn dangle() -> &String {
 }
 ```
 
-我们试图使 s 悬空，但编译器会报错：
+我们试图使 `s` 悬空，但编译器会报错：
 
->this function's return type contains a borrowed value, but there is no value for it to be borrowed from.
+> this function's return type contains a borrowed value, but there is no value for it to be borrowed from.
 
-此时指针的值 invalid ,编译器会阻止我们返回这个值。
+此时指针的值 invalid, 编译器会阻止我们返回这个值。
 
 然而这种 bug 非常基础，普通的 C 编译器也能发现。但在程序越来越复杂之后，悬空的指针可能隔了很多个函数才被调用，C 编译器就不够聪明了，但 rust 还是能在编译时发现这种问题。这正是 Ownership 的威力。
 
 一个更有说服力的例子是数据读写的竞争冒险问题。操作系统课告诉我们，一个时候可以有很多个读者，或者只有一个写者，系统才能正常运行。以下是发生竞争冒险问题的条件：
 
-- a. two or more pointers to the same resource
+- two or more pointers to the same resource
+- at least one is writing
+- the operations are not synchronized
 
-- b. at least one is writing
+而 rust 里的指针（称之为 reference），分为可变和不可变两种。不可变的指针只能读所指向的值，而可变指针可以写。在 rust 指针的数据结构层面，有如下规定：
 
-- c. the operations are not synchronized
+1. the borrower’s scope must not outlast the owner
+2. you can have one of the following, but not both:
+    1. zero or more references to a resource; or
+    2. exactly one mutable reference
 
-而 rust 里的指针（称之为 reference ），分为可变和不可变两种。不可变的指针只能读所指向的值，而可变指针可以写。在 rust 指针的数据结构层面，有如下规定；
-
-- 1. the borrower’s scope must not outlast the owner
-
-- 2. you can have one of the following, but not both:
-
-  - 2.1. zero or more references to a resource; or
-
-  - 2.2. exactly one mutable reference
-
-如果不满足这些要求，编译器不会放行。规则1在我们的第一个例子里体现，而规则二则保证了竞争冒险问题永远不会发生，因为访问这些数据的指针的行为、数量被编译器限制了。
+如果不满足这些要求，编译器不会放行。规则 1 在我们的第一个例子里体现，而规则二则保证了竞争冒险问题永远不会发生，因为访问这些数据的指针的行为、数量被编译器限制了。
 
 ![形象描述如何避免竞争冒险问题](feasibility.assets/rust_ownership_21.gif)
 
 这些例子都只是 Ownership 的一部分。而在一个用 rust 写成的 OS 里，无处不受 Ownership 的约束。这正是其安全性的强大保证。
 
-#### thread and concurrency safety
+#### Thread and concurrency safety
 
 事实上，rust 的特性天然的解决并发的问题，而这也是 rust 语言项目的初衷之一。许多语言都支持线程有关的库，相关的 API ，rust 也是。但 rust 能更好的解决如下问题：
 
@@ -142,63 +136,55 @@ fn dangle() -> &String {
 一个例子：
 
 ``` rust
-fa foo() {
-    let mut ptr = Box:new(42);          //Allocate a pointer
-    thread::spawn(|| {                //Spawn a thread
-       *ptr = 0;                        //   Modify the pointer
+fn foo() {
+    let mut ptr = Box:new(42);      // Allocate a pointer
+    thread::spawn(|| {              // Spawn a thread
+        *ptr = 0;                   // Modify the pointer
     });
 }
 ```
 
- ``` rust
- fa foo() {
-     let mut ptr = Box:new(42);          //Allocate a pointer
-     thread::spawn(move || {                //Spawn a thread
-        *ptr = 0;                        //   Modify the pointer
-     });
- }
- ```
-前一段代码会报错，而后一段不会。关于 ptr 所有权属于哪个指针的问题，后一段代码转移了 ptr 的所有权。
+``` rust
+fn foo() {
+    let mut ptr = Box:new(42);     // Allocate a pointer
+    thread::spawn(move || {        // Spawn a thread
+        *ptr = 0;                  // Modify the pointer
+    });
+}
+```
+前一段代码会报错，而后一段不会。关于 ptr 所有权属于哪个指针的问题，后一段代码转移了 ptr 的所有权。
 
-#### zero cost safety
+#### Zero cost safety
 零开销安全性也是 rust OS 非常重要的特点。这个特点的具体含义是，大部分确保安全的工作都在编译时完成，而不是在运行时再通过各种手段来提高安全性。上文的两个例子还会再次出现，它们也都是零开销安全性的绝佳体现。
 
 - GC
-垃圾回收是避免上文所提例1的一个不错的方法，但并不是一个最优方案。比如，GC 机制是在运行时进行的，肯定会影响运行效率。而且就 JAVA 为例，如果我们不用去理解 GC 机制的原理，因为如果不了解其原理，可能会引发内存泄漏、频繁 GC 导致应用卡顿,甚至出现 OOM 等问题。而 rust 编译器与 Ownership 保证了指针不会悬空，可谓从源头上断绝了垃圾的产生。
+垃圾回收是避免上文所提例 1 的一个不错的方法，但并不是一个最优方案。比如，GC 机制是在运行时进行的，肯定会影响运行效率。而且就 JAVA 为例，如果我们不用去理解 GC 机制的原理，因为如果不了解其原理，可能会引发内存泄漏、频繁 GC 导致应用卡顿,甚至出现 OOM 等问题。而 rust 编译器与 Ownership 保证了指针不会悬空，可谓从源头上断绝了垃圾的产生。
 
 - data race
 在其他操作系统中，有其他的手段来避免这个问题，比如信号量或管程。但和上例相似，都在运行时进行的。
 
 zero cost safety 有很多优点，安全性、可靠性得到了很大提升，也提高了运行速度。
 
-#### ```unsafe``` 标签
+#### `unsafe` 标签
 
-rust 语句块可以加上 ```unsafe``` 标签。这句咒语就是告诉编译器：“相信我，一切都天衣无缝。”编译器会允许你做如下事情：
+rust 语句块可以加上 `unsafe` 标签。这句咒语就是告诉编译器：“相信我，一切都天衣无缝。”编译器会允许你做如下事情：
 - Dereference a raw pointer
 - Call an unsafe function or method
 - Access or modify a mutable static variable
 - Implement an unsafe trait
 
-事实上完全 OS 中完全避免 ```unsafe``` 是不可能的。和底层硬件打交道， ```unsafe``` 行为有时候无法避免。
->A quick grep gives us some stats: the kernel has about 70 invocations of ```unsafe``` in about 4500 lines of code overall.
+事实上完全 OS 中完全避免 `unsafe` 是不可能的。和底层硬件打交道， `unsafe` 行为有时候无法避免。
+> A quick grep gives us some stats: the kernel has about 70 invocations of `unsafe` in about 4500 lines of code overall.
 
 但这种机制还是给了我们很大便利。
-- 程序员还是获得了一定粒度上的控制权。
-
-  没有这个标签，有时候会约束程序，使得程序员无法完成所需要的功能。
-
-- 几乎整个 OS 都是安全的，bug 调试可以集中在 ```unsafe``` 的地方。
-
-- 几乎整个 OS 都是安全的，
-  这样可以在其基础上开发一些原来没有的模块、软件或功能，安全性反哺操作系统功能。
-
+- 程序员还是获得了一定程度上的控制权。没有这个标签，有时候会约束程序，使得程序员无法完成所需要的功能。
+- 几乎整个 OS 都是安全的，bug 调试可以集中在 `unsafe` 的地方。
+- 几乎整个 OS 都是安全的，这样可以在其基础上开发一些原来没有的模块、软件或功能，安全性反哺操作系统功能。
 - 给了对操作系统了解不多，或者说对系统了解不多的程序员便捷开发一个新系统的机会。
 
-#### other Redox safety features
+#### Other Redox safety features
 
 #### rust 操作系统可能的不足之处（目前）
-
-(OS里面如何用rust内禀的一些特性)
 
 ##### Negative
 
