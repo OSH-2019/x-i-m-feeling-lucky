@@ -55,15 +55,21 @@
 
 ### Why Rust is safe?
 
-(Rust 语言特性 ownership、option、)
+#### ownership
 
+#### lifetime
 
+#### option
+
+### Why Rust can make an OS?
+
+> Rust is a ***system*** programming language.
 
 
 
 ## 技术依据 (LWS WRC)
 
-### How Rust make OS safe?
+### How Rust makes OS safe?
 
 上节已经讨论了 rust 的一些安全特性，本节会介绍 rust 的这些特征如何在 OS 中体现出来。
 
