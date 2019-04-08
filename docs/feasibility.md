@@ -3,64 +3,70 @@
 <!-- TOC -->
 
 - [可行性报告](#可行性报告)
-    - [项目名称](#项目名称)
-    - [项目简介](#项目简介)
-    - [理论依据 (YL)](#理论依据-yl)
-        - [Why Rust is safe?](#why-rust-is-safe)
-            - [Memory safety](#memory-safety)
-            - [ownership](#ownership)
-            - [lifetime](#lifetime)
-            - [option](#option)
-        - [Why Rust is better for making an OS?](#why-rust-is-better-for-making-an-os)
-            - [Why not assembly language?](#why-not-assembly-language)
-            - [Why not application programming  language?](#why-not-application-programming--language)
-            - [Why not C or C++?](#why-not-c-or-c)
-            - [Why Rust?](#why-rust)
-    - [技术依据 (LWS WRC)](#技术依据-lws-wrc)
-        - [How Rust makes OS safe?](#how-rust-makes-os-safe)
-            - [Enforced memory safety](#enforced-memory-safety)
-            - [Thread and concurrency safety](#thread-and-concurrency-safety)
-            - [Zero cost safety](#zero-cost-safety)
-            - [`unsafe` 标签](#unsafe-标签)
-            - [Other Redox safety features](#other-redox-safety-features)
-            - [rust 操作系统可能的不足之处（目前）](#rust-操作系统可能的不足之处目前)
+    - [一、项目名称](#一项目名称)
+    - [二、项目简介](#二项目简介)
+    - [三、理论依据](#三理论依据)
+        - [1. Raspberry Pi](#1-raspberry-pi)
+            - [1.1 About Raspberry Pi](#11-about-raspberry-pi)
+            - [1.2 Hardware of Raspberry 3B+](#12-hardware-of-raspberry-3b)
+            - [1.3 How it boots?](#13-how-it-boots)
+                - [1. 第一阶段 bootloader](#1-第一阶段-bootloader)
+                - [2. 第二阶段 bootloader](#2-第二阶段-bootloader)
+        - [2. Operating System](#2-operating-system)
+            - [2.1 About operating system](#21-about-operating-system)
+            - [2.2 What features a modern OS?](#22-what-features-a-modern-os)
+        - [3. Rust Programming Language](#3-rust-programming-language)
+            - [3.1 About Rust](#31-about-rust)
+            - [](#)
+            - [3.2 Why choose Rust?](#32-why-choose-rust)
+                - [3.2.1 Why not assembly language?](#321-why-not-assembly-language)
+                - [3.2.2 Why not application programming  language?](#322-why-not-application-programming--language)
+                - [3.2.3 Why not C or C++?](#323-why-not-c-or-c)
+                - [3.2.4 Why Rust?](#324-why-rust)
+    - [四、技术依据](#四技术依据)
+        - [1. How Rust makes OS safe?](#1-how-rust-makes-os-safe)
+            - [1.1 Enforced memory safety](#11-enforced-memory-safety)
+            - [1.2 Thread and concurrency safety](#12-thread-and-concurrency-safety)
+            - [1.3 Zero cost safety](#13-zero-cost-safety)
+            - [1.4 `unsafe` 标签](#14-unsafe-标签)
+            - [1.5 Other Redox safety features](#15-other-redox-safety-features)
+            - [1.6 rust 操作系统可能的不足之处（目前）](#16-rust-操作系统可能的不足之处目前)
                 - [Negative](#negative)
                     - [Linux](#linux)
                     - [Windows](#windows)
-        - [Rust OS still fast](#rust-os-still-fast)
-        - [Rust is feasible (Samples)](#rust-is-feasible-samples)
+        - [2. Rust OS still fast](#2-rust-os-still-fast)
+        - [3. Rust is feasible (Samples)](#3-rust-is-feasible-samples)
                 - [Redox](#redox)
                 - [bkernel](#bkernel)
                 - [CS140e](#cs140e)
-    - [3. 设计方案 (LYF)](#3-设计方案-lyf)
-        - [3.0 总体架构图](#30-总体架构图)
-            - [3.1 从硬件到软件](#31-从硬件到软件)
-            - [3.2 基本数据结构](#32-基本数据结构)
-                - [3.2.1 栈(Stack)](#321-栈stack)
-                - [3.2.2 Volatile](#322-volatile)
-            - [3.3 内核数据结构](#33-内核数据结构)
-                - [3.3.1 链表(Link List)](#331-链表link-list)
-                - [3.3.2 队列(Queue)](#332-队列queue)
-                - [3.3.3 映射(Map)](#333-映射map)
-                - [3.3.4 二叉树(Binary Tree)](#334-二叉树binary-tree)
-            - [3.4 文件系统](#34-文件系统)
-                - [3.4.1 类型选择](#341-类型选择)
-                - [3.4.2 实现相关](#342-实现相关)
-            - [3.5 内存管理](#35-内存管理)
-            - [3.6 进程管理](#36-进程管理)
-                - [3.6.1 进程信息维护](#361-进程信息维护)
-                - [3.6.2 进程调度](#362-进程调度)
-            - [3.7 其它部分](#37-其它部分)
-    - [参考资料](#参考资料)
+    - [五、设计方案](#五设计方案)
+        - [1. 总体架构图](#1-总体架构图)
+        - [2. 从硬件到软件](#2-从硬件到软件)
+        - [3. 基本数据结构](#3-基本数据结构)
+            - [3.1 栈(Stack)](#31-栈stack)
+            - [3.2 Volatile](#32-volatile)
+        - [4. 内核数据结构](#4-内核数据结构)
+            - [4.1 链表 (Link List)](#41-链表-link-list)
+            - [4.2 队列 (Queue)](#42-队列-queue)
+            - [4.3 映射 (Map)](#43-映射-map)
+            - [4.4 二叉树 (Binary Tree)](#44-二叉树-binary-tree)
+        - [5. 文件系统](#5-文件系统)
+            - [5.1 类型选择](#51-类型选择)
+            - [5.2 实现相关](#52-实现相关)
+        - [6. 内存管理](#6-内存管理)
+        - [7. 进程管理](#7-进程管理)
+            - [7.1 进程信息维护](#71-进程信息维护)
+            - [7.2 进程调度](#72-进程调度)
+        - [8. 其它部分](#8-其它部分)
+    - [六、参考资料](#六参考资料)
 
 <!-- /TOC -->
 
-
-## 项目名称
+## 一、项目名称
 
 <big>**Implementing an OS on a Raspberry Pi 3 with Rust**</big>
 
-## 项目简介
+## 二、项目简介
 
 使用 Rust 编程语言写一个能在树莓派上运行的操作系统。
 
@@ -91,27 +97,46 @@
 
 主要参考斯坦福大学 2018 年 CS140e 课程，在树莓派上完成一个操作系统的基本组成（引导、文件系统、内存系统、进程管理等），先达成能上机跑起来的目标（连接显示器，开机后能够显示一个Shell，提供对常用命令的支持）。若仍有余力，将在某些部分（如进程调度、文件系统）上做进一步优化。**本项目重点不在做出什么新东西，做出什么比 [Redox](<https://www.redox-os.org/>) 更好的东西，而是试图通过“造轮子”的过程，将 OSH 课上学的东西用起来。**
 
-## 理论依据 (YL)
+## 三、理论依据
 
-### Raspberry Pi
+### 1. Raspberry Pi
 
-#### About Raspberry Pi
+#### 1.1 About Raspberry Pi
 
-#### Hardware of Raspberry 3B+
+树莓派（Raspberry Pi），是一款基于Linux的单片机计算机。它由英国的树莓派基金会所开发，目的是以低价硬件及自由软件促进学校的基本计算机科学教育
 
-#### How it boots?
+#### 1.2 Hardware of Raspberry 3B+
 
- 
+- 处理器：博通 BCM2837B0 SoC，集成四核 ARM Cortex-A53（ARMv8）64位 @ 1.4GHz CPU，集成博通 Videocore-IV GPU；
+- 内存：1GB LPDDR2 SDRAM；
+- 有线网络：千兆以太网（通过 USB2.0 通道，最大吞吐量 300Mbps）；
+- 无线网络：2.4GHz 和 5GHz 双频 Wi-Fi，支持 802.11b/g/n/ac；
+- 蓝牙：蓝牙 4.2 & 低功耗蓝牙（BLE）；
+- 接口：HDMI 接口，3.5mm 模拟音频视频插孔，4 x USB 2.0 接口，RJ45 以太网口，摄像机串行接口（CSI），显示器串行接口（DSI），Micro SD 插槽，40 Pin 扩展双排插针。
 
-### Operating System
+![img](feasibility.assets/raspberrypi.jpg)
 
-#### About operating system
+#### 1.3 How it boots?
+
+ 树莓派支持 Micro SD card 启动和 USB 启动，由于我们只用到 Micro SD card 启动方式，因此接下来将只介绍它。
+
+##### 1. 第一阶段 bootloader
+
+树莓派上电后，GPU 核心启动，GPU 开始执行第一阶段的 bootloader (`bootloader.bin`)。bootloader 读取 SD 卡，将第二阶段的 bootloader (`start.elf`) 加载到 GPU，`start.elf`开始执行。
+
+##### 2. 第二阶段 bootloader
+
+`start.elf `检索附加配置文件（`config.txt`、`fixup.dat`），按照 `config.txt`来配置 ARM CPU，寻找`kernel*.img`文件，将其加载入内存，命令 CPU 开始执行`kernel*.img`中的程序。
+
+### 2. Operating System
+
+#### 2.1 About operating system
 
 *An operating system (OS) is system software that manages computer hardware and software resources and provides common services for computer programs.* ([Wikipedia](https://en.wikipedia.org/wiki/Operating_system))
 
 操作系统是一个管理硬件和软件资源、并为其它程序提供通用服务的系统软件。
 
-#### What features a modern OS?
+#### 2.2 What features a modern OS?
 
 - Memory Management
 
@@ -161,9 +186,9 @@
 
   ……
 
-### Rust Programming Language
+### 3. Rust Programming Language
 
-#### About Rust
+#### 3.1 About Rust
 
 Rust 是一个着重于安全性（特别是并发安全）的多重范型编程语言。Rust 在语法上和 C++ 类似，但是能够在保持高性能的同时提供更好的内存安全性。
 
@@ -190,9 +215,9 @@ Rust 是系统编程语言，专门用来编写以往由 C 或 C++ 编写的高�
 - 默认情况下不可变；
 - 非阻塞的垃圾收集器。
 
-#### Why choose Rust?
+#### 3.2 Why choose Rust?
 
-##### Why not assembly language?
+##### 3.2.1 Why not assembly language?
 
 早期的操作系统是用汇编语言编写的，但是后来的操作系统，几乎很少有完全用汇编语言编写的，完全用汇编语言而且还用户友好（主要指有图形界面）的更是少之又少（如 [KolibriOS](http://kolibrios.org/en/index), [MenuetOS](http://www.menuetos.net/download.htm)），为什么开发者大多不选择汇编语言作为 OS 的开发语言呢，主要有两点原因：
 
@@ -201,17 +226,17 @@ Rust 是系统编程语言，专门用来编写以往由 C 或 C++ 编写的高�
 
 基于这些原因，现代操作系统一般只在最底层部分（如内核和设备驱动程序）使用少量汇编语言，作为对 C 语言的补充，非底层部分则可以使用 C、C++、Java、Go 等语言开发。
 
-##### Why not application programming  language?
+##### 3.2.2 Why not application programming  language?
 
 从理论上来讲，任何编程语言都可以用来写操作系统——甚至脚本语言也可以通过先生成机器码的引导程序来加载自己的解释器，然后执行脚本，如基于 Python 的操作系统 [pythonix](<https://github.com/wfxpanisa/pythonix>)，但是可以做并不意味着就适合做。
 
 内核和设备驱动是操作系统的核心部分，而这两部分都需要和直接和硬件打交道，很多应用编程语言为了降低复杂度、提高安全性，选择隐藏底层细节，将硬件细节抽象化。这样在提高编程效率的同时，也决定了无法直接接触到底层硬件、无法对硬件高效管理，使得操作系统的运行效率不高。
 
-##### Why not C or C++?
+##### 3.2.3 Why not C or C++?
 
 C 和 C++ 既作为高级语言能够很容易被人理解，又能提供足够的底层支持。支持对内存的直接访问，支持指针操作，没有运行时（runtime）开销，支持 ***Assemby code inline***（可以简单理解成支持在高级语言程序里面插入汇编代码）…… 因为种种优秀的特性，C 和 C++ 在操作系统领域被大量使用，如 Windows 的内核主要由 C 编写，其它部分主要由 C 和 C++ 编写；Mac 的内核主要使用 C 编写；Linux 大部分都是由 C 编写。 但是 C 和 C++ 写的程序也往往有一些很严重的问题，如空指针、野指针、数据竞争等等，在日益追求安全性的今天，C 和 C++ 的安全性问题成为了巨大的隐患。
 
-##### Why Rust?
+##### 3.2.4 Why Rust?
 
 > Rust is a ***system*** programming language.
 
@@ -226,13 +251,13 @@ C 和 C++ 既作为高级语言能够很容易被人理解，又能提供足够�
 
 Rust 既有 C 和 C++ 的速度和对底层的支持性，又有 ownship、lifetime、强类型、静态类型等安全特性（参见本报告下一部分），使得其成为了当前最适合接替 C 和 C++ 来写操作系统的语言。
 
-## 技术依据 (LWS WRC)
+## 四、技术依据
 
-### How Rust makes OS safe?
+### 1. How Rust makes OS safe?
 
 上节已经讨论了 rust 的一些安全特性，本节会介绍 rust 的这些特征如何在 OS 中体现出来。
 
-#### Enforced memory safety
+#### 1.1 Enforced memory safety
 
 先看一个 C 语言常见的 bug ：
 
@@ -290,7 +315,7 @@ fn dangle() -> &String {
 
 这些例子都只是 Ownership 的一部分。而在一个用 rust 写成的 OS 里，无处不受 Ownership 的约束。这正是其安全性的强大保证。
 
-#### Thread and concurrency safety
+#### 1.2 Thread and concurrency safety
 
 事实上，rust 的特性天然的解决并发的问题，而这也是 rust 语言项目的初衷之一。许多语言都支持线程有关的库，相关的 API ，rust 也是。但 rust 能更好的解决如下问题：
 
@@ -319,7 +344,7 @@ fn foo() {
 ```
 前一段代码会报错，而后一段不会。关于 ptr 所有权属于哪个指针的问题，后一段代码转移了 ptr 的所有权。
 
-#### Zero cost safety
+#### 1.3 Zero cost safety
 零开销安全性也是 rust OS 非常重要的特点。这个特点的具体含义是，大部分确保安全的工作都在编译时完成，而不是在运行时再通过各种手段来提高安全性。上文的两个例子还会再次出现，它们也都是零开销安全性的绝佳体现。
 
 - GC
@@ -330,7 +355,7 @@ fn foo() {
 
 zero cost safety 有很多优点，安全性、可靠性得到了很大提升，也提高了运行速度。
 
-#### `unsafe` 标签
+#### 1.4 `unsafe` 标签
 
 rust 语句块可以加上 `unsafe` 标签。这句咒语就是告诉编译器：“相信我，一切都天衣无缝。”编译器会允许你做如下事情：
 - Dereference a raw pointer
@@ -347,9 +372,9 @@ rust 语句块可以加上 `unsafe` 标签。这句咒语就是告诉编译器�
 - 几乎整个 OS 都是安全的，这样可以在其基础上开发一些原来没有的模块、软件或功能，安全性反哺操作系统功能。
 - 给了对操作系统了解不多，或者说对系统了解不多的程序员便捷开发一个新系统的机会。
 
-#### Other Redox safety features
+#### 1.5 Other Redox safety features
 
-#### rust 操作系统可能的不足之处（目前）
+#### 1.6 rust 操作系统可能的不足之处（目前）
 
 ##### Negative
 
@@ -357,9 +382,9 @@ rust 语句块可以加上 `unsafe` 标签。这句咒语就是告诉编译器�
 
 ###### Windows
 
-### Rust OS still fast
+### 2. Rust OS still fast
 
-### Rust is feasible (Samples)
+### 3. Rust is feasible (Samples)
 
 ##### Redox
 
@@ -369,7 +394,7 @@ rust 语句块可以加上 `unsafe` 标签。这句咒语就是告诉编译器�
 
 
 
-## 3. 设计方案 (LYF)
+## 五、设计方案
 
 本项目的目的是针对树莓派3B+嵌入式设备，采用Rust语言(结合一定量的ARM汇编语言)开发一个可运行的，基本功能齐全的定制OS。
 
@@ -377,27 +402,27 @@ rust 语句块可以加上 `unsafe` 标签。这句咒语就是告诉编译器�
 
 以下给出初步的简要设计方案，最终的实现方案可能会在开发过程中略有改变，将在以后的报告中进行说明。
 
-### 3.0 总体架构图
+### 1. 总体架构图
 
 ![1554296083334](feasibility.assets/architecture_v2.0.png)
 
-#### 3.1 从硬件到软件
+### 2. 从硬件到软件
 
 树莓派上电以后会经历数阶段的boot过程，最终跳转到kernel开头的映像文件进行执行。我们首先需要使用ARM汇编语言实现一些标准的树莓派硬件驱动(GPIO、UART、SD卡等)以方便更高层次上的使用，如控制LED闪烁、串口数据收发、显示屏交互等基本操作。
 
 具体实现参考CS140e课程实验内容。
 
-#### 3.2 基本数据结构
+### 3. 基本数据结构
 
 虽然Rust中定义了不少实用的数据类型，如```Vector```、```String```等结构，但是许多这样的结构都需要依赖操作系统提供的```malloc()```系统调用实现。考虑到现在的程序需要直接在 Raspberry Pi 裸机上运行，无法使用这些结构，我们必须直接基于硬件的空间来实现一些基本的数据结构以便在更高层次上实现内核所需的数据结构。以下介绍首要的两种结构。
 
-##### 3.2.1 栈(Stack)
+#### 3.1 栈(Stack)
 
 栈在计算机科学中可以说是最重要的数据结构之一，在最基本的层面就有栈的存在，故把栈的实现放在此处。
 
 栈支持的最主要操作是入栈```push```、出栈```pop```和查看栈顶元素```top```，即使从汇编的角度来看也相对易于实现。
 
-##### 3.2.2 Volatile
+#### 3.2 Volatile
 
 在 Rust 中有类似C语言中volatile关键字的用法，使编译器不对内存读写进行优化，直接在指定的内存地址读取或写入数据。
 
@@ -405,11 +430,11 @@ rust 语句块可以加上 `unsafe` 标签。这句咒语就是告诉编译器�
 
 在我们的实现中，将针对一些基本数据类型进行Volatile改进。
 
-#### 3.3 内核数据结构
+### 4. 内核数据结构
 
 在内核中应当实现一些标准内建的通用数据结构、这会为后续的内核开发带来极大的方便。在上学期的课程中我们已经初步掌握了数据结构的原理、实现与使用，而内核开发中最常用的有以下几种。
 
-##### 3.3.1 链表(Link List)
+#### 4.1 链表 (Link List)
 
 最简单、最普通的数据结构，但相当有用。它是一种存放和操作可变数量元素(结点)的数据结构，其所包含的元素都是动态创建并插入的。由于链表中各个元素的创建时间一般各不相同，所以它们在内存中无需占用连续的内存区，也就是说，通过指针操作即可简单地实现链表。
 
@@ -417,7 +442,7 @@ rust 语句块可以加上 `unsafe` 标签。这句咒语就是告诉编译器�
 
 在操作系统内核的开发中，链表可以用于一系列动态数据的管理。比如存储管理中可分配存储的链表、进程管理中用于表示进程状态的PCB连接的链表等。
 
-##### 3.3.2 队列(Queue)
+#### 4.2 队列 (Queue)
 
 对任何操作系统内核来说，生产者和消费者的编程模型是必不可少的。在该模式中，生产者创造数据(错误信息、数据包)而消费者读取这些信息和数据并以某种方式来消费这些数据，一般来说消费者获取数据的顺序和加入队列的顺序是一致的，也就是遵守FIFO规则。队列是实现这种FIFO模型的最简单的方式。其可以简单地基于数组或链表来实现。
 
@@ -425,7 +450,7 @@ rust 语句块可以加上 `unsafe` 标签。这句咒语就是告诉编译器�
 
 在操作系统内核的开发中，队列适合一切基于FIFO规则的模型。比如进程管理中的多级队列调度算法中的任务队列、进程通信中的消息队列等。
 
-##### 3.3.3 映射(Map)
+#### 4.3 映射 (Map)
 
 映射，又名关联数组，是由唯一键组成的集合，维护一组键值对(Key-value pair)。使用散列表(Hash table)可以实现之，我们的实现中主要利用它。
 
@@ -433,7 +458,7 @@ rust 语句块可以加上 `unsafe` 标签。这句咒语就是告诉编译器�
 
 在操作系统内核的开发中，映射通常用于实现映射关系。比如文件系统中的Hash文件、内存分配的Hash算法等。
 
-##### 3.3.4 二叉树(Binary Tree)
+#### 4.4 二叉树 (Binary Tree)
 
 按照所需的用途更具体地说应该是二叉平衡搜索树(Balanced BST)或者是其中的一种实现——红黑树，我们需要这样一种数据结构来对需要迅速检索的大量数据来进行维护。其实现相比上述三种来说要复杂，此处不予赘述。
 
@@ -443,15 +468,15 @@ rust 语句块可以加上 `unsafe` 标签。这句咒语就是告诉编译器�
 
 
 
-#### 3.4 文件系统
+### 5. 文件系统
 
 文件系统提供了在线存储和访问计算机操作系统和所有用户的程序与数据的机制。其由两个不同的部分组成：一组文件(用于存储相关数据)和目录结构(用于组织系统内的文件并提供有关文件的信息)。而对于我们的实现方案来说，需要考虑以下一些问题。
 
-##### 3.4.1 类型选择
+#### 5.1 类型选择
 
 处于兼容性与简单的考虑，我们决定重新实现一个FAT32文件系统。开发过程中必须严格按照其标准来实现。
 
-##### 3.4.2 实现相关
+#### 5.2 实现相关
 
 本项目中使用的SD卡存储设备采用MBR(Master Boot Record)分区表，故我们可以基于它来获取分区信息并实现文件系统。
 
@@ -459,9 +484,7 @@ MBR 位于磁盘的前 512 个字节，能够保存四条分区记录，对应�
 
 而在具体实现FAT32文件系统时，也需要对该文件系统的详细信息进行研究，可以参照FAT32的白皮书。
 
-
-
-#### 3.5 内存管理
+### 6. 内存管理
 
 我们的项目将运行在树莓派裸金属上，不需要考虑虚拟地址空间的设计。
 
@@ -473,13 +496,11 @@ MBR 位于磁盘的前 512 个字节，能够保存四条分区记录，对应�
 
 在实现的过程中，我们会参考常见的内存管理方法，并利用Rust的特性来增加管理的安全性。
 
-
-
-#### 3.6 进程管理
+### 7. 进程管理
 
 进程管理是操作系统中一个非常重要的概念。在这一部分中，我们将考虑进程的资源分配、信息维护以及调度方案。
 
-##### 3.6.1 进程信息维护
+#### 7.1 进程信息维护
 
 在进程的控制中，必须维护一些关于进程的信息，在我们的实现中，采用标准的进程控制块(PCB)链表结构。
 
@@ -492,7 +513,7 @@ MBR 位于磁盘的前 512 个字节，能够保存四条分区记录，对应�
 - 调度器状态（进程是否需要被得到调度）
 - 运行状态（寄存器等信息，方便上下文切换后进行恢复）
 
-##### 3.6.2 进程调度
+#### 7.2 进程调度
 
 事实上，线程是进程调度的最小单位。此处暂时不做区别，一概以进程相称。
 
@@ -506,9 +527,7 @@ MBR 位于磁盘的前 512 个字节，能够保存四条分区记录，对应�
 
 我们在初步的的实现中希望采取轮转法作为主要策略，有余裕则尝试实现MFQS策略。
 
-
-
-#### 3.7 其它部分
+### 8. 其它部分
 
 一个操作系统中所包含的要素当然不仅仅包括这些，还有很重要的异常与中断处理、内核同步和由此带来的时间管理部分等。这暂时需要进一步的学习。
 
@@ -517,6 +536,16 @@ MBR 位于磁盘的前 512 个字节，能够保存四条分区记录，对应�
 虽然我们的目标是实现一个简单的操作系统，但如果有足够的时间就会考虑对其性能进行优化。
 
 
-## 参考资料
+## 六、参考资料
 
-1. [BrokenThorn Entertainment](http://www.brokenthorn.com/Resources/OSDevIndex.html)
+- [BrokenThorn Entertainment](http://www.brokenthorn.com/Resources/OSDevIndex.html)
+
+- [Stanford CS140e - Operating Systems](https://cs140e.sergio.bz/)
+
+- [Rust Documentation](https://doc.rust-lang.org/stable/)
+
+- [Writing an OS in Rust](https://os.phil-opp.com/)
+
+- [rust-embedded/rust-raspi3-OS-tutorials: Rust bare-metal and OS tutorials on the Raspberry Pi 3](https://github.com/rust-embedded/rust-raspi3-OS-tutorials)
+
+- [Stanford: An experimental course on operating systems](https://www.reddit.com/r/cs140e/)
