@@ -35,10 +35,9 @@
                     - [Linux](#linux)
                     - [Windows](#windows)
         - [2. Rust OS still fast](#2-rust-os-still-fast)
-        - [3. Rust is feasible (Samples)](#3-rust-is-feasible-samples)
-                - [Redox](#redox)
-                - [bkernel](#bkernel)
-                - [CS140e](#cs140e)
+        - [Rust is feasible (Samples)](#rust-is-feasible-samples)
+            - [[Redox](https://redox-os.org/)](#redoxhttpsredox-osorg)
+            - [[CS140e](https://cs140e.sergio.bz)](#cs140ehttpscs140esergiobz)
     - [五、设计方案](#五设计方案)
         - [1. 总体架构图](#1-总体架构图)
         - [2. 从硬件到软件](#2-从硬件到软件)
@@ -261,7 +260,7 @@ Rust 既有 C 和 C++ 的速度和对底层的支持性，又有 ownship、lifet
 
 先看一个 C 语言常见的 bug ：
 
-```C
+```c
 int *func (void)
 {
     int num = 1234;
@@ -325,7 +324,7 @@ fn dangle() -> &String {
 
 一个例子：
 
-``` rust
+```rust
 fn foo() {
     let mut ptr = Box:new(42);      // Allocate a pointer
     thread::spawn(|| {              // Spawn a thread
@@ -334,11 +333,11 @@ fn foo() {
 }
 ```
 
-``` rust
+```rust
 fn foo() {
-    let mut ptr = Box:new(42);     // Allocate a pointer
-    thread::spawn(move || {        // Spawn a thread
-        *ptr = 0;                  // Modify the pointer
+    let mut ptr = Box:new(42);      // Allocate a pointer
+    thread::spawn(move || {         // Spawn a thread
+        *ptr = 0;                   // Modify the pointer
     });
 }
 ```
@@ -384,14 +383,20 @@ rust 语句块可以加上 `unsafe` 标签。这句咒语就是告诉编译器�
 
 ### 2. Rust OS still fast
 
-### 3. Rust is feasible (Samples)
+### Rust is feasible (Samples)
+#### [Redox](https://redox-os.org/)
+Redox 是一个使用 rust 编写的通用的类 Unix 操作系统。它的内核结构为微内核，内核的代码量约为 16000 行。Redox 不仅仅是个内核，而是个全功能的操作系统，它提供了内存分配器、文件系统、显示管理器等扩展，和内核本身共同构成了一个实用、便捷的操作系统生态。某种意义上可以把它理解成基于内存安全的编程语言的、加上一些现代技术的 GNU 或 BSD 生态。
 
-##### Redox
+#### [CS140e](https://cs140e.sergio.bz)
+斯坦福在 2018 年冬季学期开设的 CS140e 是一个实验课，在课中学生们使用 rust 开发一个可以在树莓派 3 上运行的操作系统。课上的四个 assignments 依次为：
+1. shell 和 bootloader；
+2. SD 卡驱动和 FAT32 文件系统；
+3. spawn, 在不同的进程中加载并执行位于 SD 卡上的程序；
+4. multicore multitasking.
 
-##### bkernel
+第四个 assignment 最后没有布置。另外还有一个 assignment 是搭建一个完整的操作系统。
 
-##### CS140e
-
+由于大作业主要参考 2018 年的 CS140e，故参考该课程对工作量做一个估计。CS140e 的上课时间为两个月，根据 [这里](https://cs140e.sergio.bz/assignments/info/#work-load) 所说的，单人完成每周花费的时间为 10 -- 15 小时。在代码量方面，以 [jiegec/cs140e](https://github.com/jiegec/cs140e) 为参考，需要自己写的代码行数小于 6000 行。虽然实验课最终没有将所有的实验都布置完，但是这些任务由四个人共同承担，是可行的。
 
 
 ## 五、设计方案
@@ -548,4 +553,9 @@ MBR 位于磁盘的前 512 个字节，能够保存四条分区记录，对应�
 
 - [rust-embedded/rust-raspi3-OS-tutorials: Rust bare-metal and OS tutorials on the Raspberry Pi 3](https://github.com/rust-embedded/rust-raspi3-OS-tutorials)
 
+<<<<<<< HEAD
 - [Stanford: An experimental course on operating systems](https://www.reddit.com/r/cs140e/)
+=======
+1. [BrokenThorn Entertainment](http://www.brokenthorn.com/Resources/OSDevIndex.html)
+2. [Redox Book](https://doc.redox-os.org/book/)
+>>>>>>> 60ad1398811a3987338fd20bd56c270dc2f66d82
