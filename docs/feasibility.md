@@ -17,7 +17,6 @@
             - [2.2 What features a modern OS?](#22-what-features-a-modern-os)
         - [3. Rust Programming Language](#3-rust-programming-language)
             - [3.1 About Rust](#31-about-rust)
-            - [](#)
             - [3.2 Why choose Rust?](#32-why-choose-rust)
                 - [3.2.1 Why not assembly language?](#321-why-not-assembly-language)
                 - [3.2.2 Why not application programming  language?](#322-why-not-application-programming--language)
@@ -35,7 +34,7 @@
                     - [Linux](#linux)
                     - [Windows](#windows)
         - [2. Rust OS still fast](#2-rust-os-still-fast)
-        - [Rust is feasible (Samples)](#rust-is-feasible-samples)
+        - [3. Rust is feasible (Samples)](#3-rust-is-feasible-samples)
             - [[Redox](https://redox-os.org/)](#redoxhttpsredox-osorg)
             - [[CS140e](https://cs140e.sergio.bz)](#cs140ehttpscs140esergiobz)
     - [五、设计方案](#五设计方案)
@@ -200,8 +199,6 @@ Rust 由 Mozila Research 的 Graydon Hoare 设计，Dave Herman、Brendan Eich �
 Rust 在 Stack Overflow 的 [2016](https://stackoverflow.com/insights/survey/2016#technology-most-loved-dreaded-and-wanted)、[2017](https://stackoverflow.com/insights/survey/2017#most-loved-dreaded-and-wanted)、[2018](https://insights.stackoverflow.com/survey/2018/#most-loved-dreaded-and-wanted) 年开发者调查中，是“最被喜爱的编程语言”。
 
 ![1554027955391](feasibility.assets/stat.png)
-
-#### 
 
 Rust 是系统编程语言，专门用来编写以往由 C 或 C++ 编写的高性能程序，但是 C 和 C++ 非常容易出现一系列类似无效内存访问（segmentation faults）的问题，Rust 的出现就是为了避免类似问题的发生。 Rust 的一些重要特性如下。
 
@@ -383,7 +380,9 @@ rust 语句块可以加上 `unsafe` 标签。这句咒语就是告诉编译器�
 
 ### 2. Rust OS still fast
 
-### Rust is feasible (Samples)
+
+
+### 3. Rust is feasible (Samples)
 #### [Redox](https://redox-os.org/)
 Redox 是一个使用 rust 编写的通用的类 Unix 操作系统。它的内核结构为微内核，内核的代码量约为 16000 行。Redox 不仅仅是个内核，而是个全功能的操作系统，它提供了内存分配器、文件系统、显示管理器等扩展，和内核本身共同构成了一个实用、便捷的操作系统生态。某种意义上可以把它理解成基于内存安全的编程语言的、加上一些现代技术的 GNU 或 BSD 生态。
 
@@ -553,9 +552,6 @@ MBR 位于磁盘的前 512 个字节，能够保存四条分区记录，对应�
 
 - [rust-embedded/rust-raspi3-OS-tutorials: Rust bare-metal and OS tutorials on the Raspberry Pi 3](https://github.com/rust-embedded/rust-raspi3-OS-tutorials)
 
-<<<<<<< HEAD
-- [Stanford: An experimental course on operating systems](https://www.reddit.com/r/cs140e/)
-=======
-1. [BrokenThorn Entertainment](http://www.brokenthorn.com/Resources/OSDevIndex.html)
-2. [Redox Book](https://doc.redox-os.org/book/)
->>>>>>> 60ad1398811a3987338fd20bd56c270dc2f66d82
+-  [BrokenThorn Entertainment](http://www.brokenthorn.com/Resources/OSDevIndex.html)
+
+-  [Redox Book](https://doc.redox-os.org/book/)
