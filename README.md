@@ -23,7 +23,7 @@
 
 ## 课程规划
 
-（来自https://github.com/OSH-2019/x-rust-freertos/blob/master/README.md）
+（来自[隔壁小组](https://github.com/OSH-2019/x-rust-freertos/blob/master/README.md)）
 
 - 第一二周：提交分组名单与初拟题目
 - 第三周：第一次作业（作业+实验0）
