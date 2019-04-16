@@ -1,0 +1,3597 @@
+diff -ruN orig/bootloader/Xargo.toml new/bootloader/Xargo.toml
+--- orig/bootloader/Xargo.toml	2018-07-18 23:59:41.000000000 +0800
++++ new/bootloader/Xargo.toml	2018-07-19 22:31:03.000000000 +0800
+@@ -2,10 +2,6 @@
+ core = {}
+ std_unicode = {}
+ 
+-[dependencies.compiler_builtins]
+-features = ["mem"]
+-stage = 1
+-
+ [dependencies.std]
+ path = "../std"
+ stage = 2
+diff -ruN orig/bootloader/src/kmain.rs new/bootloader/src/kmain.rs
+--- orig/bootloader/src/kmain.rs	2018-07-18 23:59:41.000000000 +0800
++++ new/bootloader/src/kmain.rs	2018-07-19 22:31:19.000000000 +0800
+@@ -1,5 +1,6 @@
+ #![feature(asm, lang_items)]
+ 
++extern crate core;
+ extern crate xmodem;
+ extern crate pi;
+ 
+diff -ruN orig/bootloader/src/lang_items.rs new/bootloader/src/lang_items.rs
+--- orig/bootloader/src/lang_items.rs	2018-07-18 23:59:41.000000000 +0800
++++ new/bootloader/src/lang_items.rs	2018-07-19 22:31:50.000000000 +0800
+@@ -1,6 +1,12 @@
++use core::panic::PanicInfo;
++
+ #[lang = "eh_personality"] pub extern fn eh_personality() {}
+ 
+-#[lang = "panic_fmt"] #[no_mangle] pub extern fn panic_fmt() -> ! { loop{} }
++#[lang = "panic_impl"]
++#[no_mangle]
++pub extern fn rust_begin_panic(_info: &PanicInfo) -> ! {
++    loop {}
++}
+ 
+ #[no_mangle]
+ pub unsafe extern fn memcpy(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
+diff -ruN orig/kernel/Xargo.toml new/kernel/Xargo.toml
+--- orig/kernel/Xargo.toml	2018-07-18 23:59:41.000000000 +0800
++++ new/kernel/Xargo.toml	2018-07-18 23:59:36.000000000 +0800
+@@ -2,9 +2,6 @@
+ core = {}
+ std_unicode = {}
+ 
+-[dependencies.compiler_builtins]
+-features = ["mem"]
+-stage = 1
+ 
+ [dependencies.std]
+ path = "../std"
+diff -ruN orig/kernel/src/kmain.rs new/kernel/src/kmain.rs
+--- orig/kernel/src/kmain.rs	2018-07-18 23:59:41.000000000 +0800
++++ new/kernel/src/kmain.rs	2018-07-19 23:52:17.000000000 +0800
+@@ -4,11 +4,12 @@
+ #![feature(asm)]
+ #![feature(optin_builtin_traits)]
+ #![feature(decl_macro)]
+-#![feature(repr_align)]
++// #![feature(repr_align)] // stable since 1.25.0
+ #![feature(attr_literals)]
+ #![feature(never_type)]
+ #![feature(ptr_internals)]
+ 
++extern crate core;
+ extern crate pi;
+ extern crate stack_vec;
+ 
+diff -ruN orig/kernel/src/lang_items.rs new/kernel/src/lang_items.rs
+--- orig/kernel/src/lang_items.rs	2018-07-18 23:59:41.000000000 +0800
++++ new/kernel/src/lang_items.rs	2018-07-19 22:28:29.000000000 +0800
+@@ -1,6 +1,12 @@
++use core::panic::PanicInfo;
++
+ #[lang = "eh_personality"] pub extern fn eh_personality() {}
+ 
+-#[lang = "panic_fmt"] #[no_mangle] pub extern fn panic_fmt() -> ! { loop{} }
++#[lang = "panic_impl"]
++#[no_mangle]
++pub extern fn rust_begin_panic(_info: &PanicInfo) -> ! {
++    loop {}
++}
+ 
+ #[no_mangle]
+ pub unsafe extern fn memcpy(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
+diff -ruN orig/pi/src/lib.rs new/pi/src/lib.rs
+--- orig/pi/src/lib.rs	2018-07-18 23:59:41.000000000 +0800
++++ new/pi/src/lib.rs	2018-07-19 22:34:26.000000000 +0800
+@@ -2,7 +2,7 @@
+ #![feature(const_fn)]
+ #![feature(asm)]
+ #![feature(decl_macro)]
+-#![feature(repr_align)]
++// #![feature(repr_align)] // stable since 1.25.0
+ #![feature(attr_literals)]
+ #![feature(never_type)]
+ 
+diff -ruN orig/std/Xargo.toml new/std/Xargo.toml
+--- orig/std/Xargo.toml	2018-07-18 23:59:41.000000000 +0800
++++ new/std/Xargo.toml	2018-07-18 23:59:36.000000000 +0800
+@@ -1,6 +1,2 @@
+ [dependencies]
+ std_unicode = {}
+-
+-[dependencies.compiler_builtins]
+-features = ["mem"]
+-stage = 1
+diff -ruN orig/std/src/lib.rs new/std/src/lib.rs
+--- orig/std/src/lib.rs	2018-07-18 23:59:41.000000000 +0800
++++ new/std/src/lib.rs	2018-07-19 22:29:52.000000000 +0800
+@@ -38,11 +38,11 @@
+ #![feature(fn_traits)]
+ #![feature(fnbox)]
+ #![feature(fused)]
+-#![feature(generic_param_attrs)]
++// #![feature(generic_param_attrs)] // stable since 1.27.0
+ #![feature(hashmap_hasher)]
+ #![feature(heap_api)]
+ #![feature(i128)]
+-#![feature(i128_type)]
++// #![feature(i128_type)] // stable since 1.26.0.
+ #![feature(inclusive_range)]
+ #![feature(int_error_internals)]
+ #![feature(integer_atomics)]
+@@ -51,7 +51,7 @@
+ #![feature(libc)]
+ #![feature(link_args)]
+ #![feature(linkage)]
+-#![feature(macro_reexport)]
++#![feature(use_extern_macros)]
+ #![feature(macro_vis_matcher)]
+ #![feature(needs_panic_runtime)]
+ #![feature(never_type)]
+@@ -68,7 +68,7 @@
+ #![feature(ptr_internals)]
+ #![feature(rand)]
+ #![feature(raw)]
+-#![feature(repr_align)]
++// #![feature(repr_align)] // stable since 1.25.0
+ #![feature(rustc_attrs)]
+ #![feature(sip_hash_13)]
+ #![feature(slice_bytes)]
+@@ -80,7 +80,7 @@
+ #![feature(str_char)]
+ #![feature(str_internals)]
+ #![feature(str_utf16)]
+-#![feature(termination_trait)]
++// #![feature(termination_trait)] // stable since 1.26.0
+ #![feature(test, rustc_private)]
+ #![feature(thread_local)]
+ #![feature(toowned_clone_into)]
+@@ -102,6 +102,7 @@
+ #![feature(slice_rsplit)]
+ #![feature(from_ref)]
+ #![feature(swap_with_slice)]
++#![feature(core_panic_info)]
+ 
+ // Explicitly import the prelude. The compiler uses this same unstable attribute
+ // to import the prelude implicitly when building crates that depend on std.
+@@ -116,15 +117,18 @@
+ // We want to re-export a few macros from core but libcore has already been
+ // imported by the compiler (via our #[no_std] attribute) In this case we just
+ // add a new crate name so we can attach the re-exports to it.
+-#[macro_reexport(panic, assert, assert_eq, assert_ne, debug_assert, debug_assert_eq,
+-                 debug_assert_ne, unreachable, unimplemented, write, writeln, try)]
++// Re-export a few macros from core
++#[stable(feature = "rust1", since = "1.0.0")]
++pub use core::{panic, assert_eq, assert_ne, debug_assert, debug_assert_eq, debug_assert_ne};
++#[stable(feature = "rust1", since = "1.0.0")]
++pub use core::{unreachable, unimplemented, write, writeln, try};
+ extern crate core as __core;
+ 
+ // #[macro_use]
+ // #[macro_reexport(vec, format)]
+ // extern crate alloc;
+ // extern crate alloc_system;
+-extern crate std_unicode;
++// extern crate std_unicode;
+ // #[doc(masked)]
+ // extern crate libc;
+ 
+@@ -135,7 +139,6 @@
+ 
+ // compiler-rt intrinsics
+ #[doc(masked)]
+-extern crate compiler_builtins;
+ 
+ // // During testing, this crate is not actually the "real" std library, but rather
+ // // it links to the real std library, which was compiled from this same source
+@@ -226,7 +229,7 @@
+ // #[stable(feature = "rust1", since = "1.0.0")]
+ // pub use alloc::vec;
+ #[stable(feature = "rust1", since = "1.0.0")]
+-pub use std_unicode::char;
++pub use core::char;
+ #[unstable(feature = "i128", issue = "35118")]
+ pub use core::u128;
+ 
+diff -ruN orig/std/src/prelude/v1.rs new/std/src/prelude/v1.rs
+--- orig/std/src/prelude/v1.rs	2018-07-18 23:59:41.000000000 +0800
++++ new/std/src/prelude/v1.rs	2018-07-18 23:59:36.000000000 +0800
+@@ -53,9 +53,10 @@
+ // #[doc(no_inline)] pub use vec::Vec;
+ 
+ // TODO: These are additions!
+-#[stable(feature = "rust1", since = "1.0.0")]
+-pub use core::slice::SliceExt;
+-#[stable(feature = "rust1", since = "1.0.0")]
+-pub use core::str::StrExt;
++// #[stable(feature = "rust1", since = "1.0.0")]
++// pub use core::slice::SliceExt;
++// #[stable(feature = "rust1", since = "1.0.0")]
++// pub use core::str::StrExt;
+ #[stable(feature = "addition", since = "1.0.0")]
+-pub use std_unicode::str::*;
++pub use core::str::*;
++// pub use std_unicode::str::*;
+diff -ruN orig/std/src/slice.rs new/std/src/slice.rs
+--- orig/std/src/slice.rs	2018-07-18 23:59:41.000000000 +0800
++++ new/std/src/slice.rs	2018-07-18 23:59:36.000000000 +0800
+@@ -97,11 +97,11 @@
+ // It's cleaner to just turn off the unused_imports warning than to fix them.
+ #![cfg_attr(test, allow(unused_imports, dead_code))]
+ 
+-use core::cmp::Ordering::{self /*, Less */};
++// use core::cmp::Ordering::{self /*, Less */};
+ // use core::mem::size_of;
+ // use core::mem;
+ // use core::ptr;
+-use core::slice as core_slice;
++// use core::slice as core_slice;
+ 
+ // use borrow::{Borrow, BorrowMut, ToOwned};
+ // use boxed::Box;
+@@ -120,7 +120,7 @@
+ #[stable(feature = "rust1", since = "1.0.0")]
+ pub use core::slice::{from_raw_parts, from_raw_parts_mut};
+ #[unstable(feature = "from_ref", issue = "45703")]
+-pub use core::slice::{from_ref, from_ref_mut};
++pub use core::slice::{from_ref, from_mut};
+ #[unstable(feature = "slice_get_slice", issue = "35729")]
+ pub use core::slice::SliceIndex;
+ // #[unstable(feature = "exact_chunks", issue = "47115")]
+@@ -170,1665 +170,6 @@
+ //     }
+ // }
+ 
+-#[lang = "slice"]
+-#[cfg(not(test))]
+-impl<T> [T] {
+-    /// Returns the number of elements in the slice.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let a = [1, 2, 3];
+-    /// assert_eq!(a.len(), 3);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn len(&self) -> usize {
+-        core_slice::SliceExt::len(self)
+-    }
+-
+-    /// Returns `true` if the slice has a length of 0.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let a = [1, 2, 3];
+-    /// assert!(!a.is_empty());
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn is_empty(&self) -> bool {
+-        core_slice::SliceExt::is_empty(self)
+-    }
+-
+-    /// Returns the first element of the slice, or `None` if it is empty.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let v = [10, 40, 30];
+-    /// assert_eq!(Some(&10), v.first());
+-    ///
+-    /// let w: &[i32] = &[];
+-    /// assert_eq!(None, w.first());
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn first(&self) -> Option<&T> {
+-        core_slice::SliceExt::first(self)
+-    }
+-
+-    /// Returns a mutable pointer to the first element of the slice, or `None` if it is empty.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let x = &mut [0, 1, 2];
+-    ///
+-    /// if let Some(first) = x.first_mut() {
+-    ///     *first = 5;
+-    /// }
+-    /// assert_eq!(x, &[5, 1, 2]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn first_mut(&mut self) -> Option<&mut T> {
+-        core_slice::SliceExt::first_mut(self)
+-    }
+-
+-    /// Returns the first and all the rest of the elements of the slice, or `None` if it is empty.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let x = &[0, 1, 2];
+-    ///
+-    /// if let Some((first, elements)) = x.split_first() {
+-    ///     assert_eq!(first, &0);
+-    ///     assert_eq!(elements, &[1, 2]);
+-    /// }
+-    /// ```
+-    #[stable(feature = "slice_splits", since = "1.5.0")]
+-    #[inline]
+-    pub fn split_first(&self) -> Option<(&T, &[T])> {
+-        core_slice::SliceExt::split_first(self)
+-    }
+-
+-    /// Returns the first and all the rest of the elements of the slice, or `None` if it is empty.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let x = &mut [0, 1, 2];
+-    ///
+-    /// if let Some((first, elements)) = x.split_first_mut() {
+-    ///     *first = 3;
+-    ///     elements[0] = 4;
+-    ///     elements[1] = 5;
+-    /// }
+-    /// assert_eq!(x, &[3, 4, 5]);
+-    /// ```
+-    #[stable(feature = "slice_splits", since = "1.5.0")]
+-    #[inline]
+-    pub fn split_first_mut(&mut self) -> Option<(&mut T, &mut [T])> {
+-        core_slice::SliceExt::split_first_mut(self)
+-    }
+-
+-    /// Returns the last and all the rest of the elements of the slice, or `None` if it is empty.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let x = &[0, 1, 2];
+-    ///
+-    /// if let Some((last, elements)) = x.split_last() {
+-    ///     assert_eq!(last, &2);
+-    ///     assert_eq!(elements, &[0, 1]);
+-    /// }
+-    /// ```
+-    #[stable(feature = "slice_splits", since = "1.5.0")]
+-    #[inline]
+-    pub fn split_last(&self) -> Option<(&T, &[T])> {
+-        core_slice::SliceExt::split_last(self)
+-
+-    }
+-
+-    /// Returns the last and all the rest of the elements of the slice, or `None` if it is empty.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let x = &mut [0, 1, 2];
+-    ///
+-    /// if let Some((last, elements)) = x.split_last_mut() {
+-    ///     *last = 3;
+-    ///     elements[0] = 4;
+-    ///     elements[1] = 5;
+-    /// }
+-    /// assert_eq!(x, &[4, 5, 3]);
+-    /// ```
+-    #[stable(feature = "slice_splits", since = "1.5.0")]
+-    #[inline]
+-    pub fn split_last_mut(&mut self) -> Option<(&mut T, &mut [T])> {
+-        core_slice::SliceExt::split_last_mut(self)
+-    }
+-
+-    /// Returns the last element of the slice, or `None` if it is empty.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let v = [10, 40, 30];
+-    /// assert_eq!(Some(&30), v.last());
+-    ///
+-    /// let w: &[i32] = &[];
+-    /// assert_eq!(None, w.last());
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn last(&self) -> Option<&T> {
+-        core_slice::SliceExt::last(self)
+-    }
+-
+-    /// Returns a mutable pointer to the last item in the slice.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let x = &mut [0, 1, 2];
+-    ///
+-    /// if let Some(last) = x.last_mut() {
+-    ///     *last = 10;
+-    /// }
+-    /// assert_eq!(x, &[0, 1, 10]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn last_mut(&mut self) -> Option<&mut T> {
+-        core_slice::SliceExt::last_mut(self)
+-    }
+-
+-    /// Returns a reference to an element or subslice depending on the type of
+-    /// index.
+-    ///
+-    /// - If given a position, returns a reference to the element at that
+-    ///   position or `None` if out of bounds.
+-    /// - If given a range, returns the subslice corresponding to that range,
+-    ///   or `None` if out of bounds.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let v = [10, 40, 30];
+-    /// assert_eq!(Some(&40), v.get(1));
+-    /// assert_eq!(Some(&[10, 40][..]), v.get(0..2));
+-    /// assert_eq!(None, v.get(3));
+-    /// assert_eq!(None, v.get(0..4));
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn get<I>(&self, index: I) -> Option<&I::Output>
+-        where I: SliceIndex<Self>
+-    {
+-        core_slice::SliceExt::get(self, index)
+-    }
+-
+-    /// Returns a mutable reference to an element or subslice depending on the
+-    /// type of index (see [`get`]) or `None` if the index is out of bounds.
+-    ///
+-    /// [`get`]: #method.get
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let x = &mut [0, 1, 2];
+-    ///
+-    /// if let Some(elem) = x.get_mut(1) {
+-    ///     *elem = 42;
+-    /// }
+-    /// assert_eq!(x, &[0, 42, 2]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn get_mut<I>(&mut self, index: I) -> Option<&mut I::Output>
+-        where I: SliceIndex<Self>
+-    {
+-        core_slice::SliceExt::get_mut(self, index)
+-    }
+-
+-    /// Returns a reference to an element or subslice, without doing bounds
+-    /// checking.
+-    ///
+-    /// This is generally not recommended, use with caution! For a safe
+-    /// alternative see [`get`].
+-    ///
+-    /// [`get`]: #method.get
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let x = &[1, 2, 4];
+-    ///
+-    /// unsafe {
+-    ///     assert_eq!(x.get_unchecked(1), &2);
+-    /// }
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub unsafe fn get_unchecked<I>(&self, index: I) -> &I::Output
+-        where I: SliceIndex<Self>
+-    {
+-        core_slice::SliceExt::get_unchecked(self, index)
+-    }
+-
+-    /// Returns a mutable reference to an element or subslice, without doing
+-    /// bounds checking.
+-    ///
+-    /// This is generally not recommended, use with caution! For a safe
+-    /// alternative see [`get_mut`].
+-    ///
+-    /// [`get_mut`]: #method.get_mut
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let x = &mut [1, 2, 4];
+-    ///
+-    /// unsafe {
+-    ///     let elem = x.get_unchecked_mut(1);
+-    ///     *elem = 13;
+-    /// }
+-    /// assert_eq!(x, &[1, 13, 4]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub unsafe fn get_unchecked_mut<I>(&mut self, index: I) -> &mut I::Output
+-        where I: SliceIndex<Self>
+-    {
+-        core_slice::SliceExt::get_unchecked_mut(self, index)
+-    }
+-
+-    /// Returns a raw pointer to the slice's buffer.
+-    ///
+-    /// The caller must ensure that the slice outlives the pointer this
+-    /// function returns, or else it will end up pointing to garbage.
+-    ///
+-    /// Modifying the container referenced by this slice may cause its buffer
+-    /// to be reallocated, which would also make any pointers to it invalid.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let x = &[1, 2, 4];
+-    /// let x_ptr = x.as_ptr();
+-    ///
+-    /// unsafe {
+-    ///     for i in 0..x.len() {
+-    ///         assert_eq!(x.get_unchecked(i), &*x_ptr.offset(i as isize));
+-    ///     }
+-    /// }
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn as_ptr(&self) -> *const T {
+-        core_slice::SliceExt::as_ptr(self)
+-    }
+-
+-    /// Returns an unsafe mutable pointer to the slice's buffer.
+-    ///
+-    /// The caller must ensure that the slice outlives the pointer this
+-    /// function returns, or else it will end up pointing to garbage.
+-    ///
+-    /// Modifying the container referenced by this slice may cause its buffer
+-    /// to be reallocated, which would also make any pointers to it invalid.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let x = &mut [1, 2, 4];
+-    /// let x_ptr = x.as_mut_ptr();
+-    ///
+-    /// unsafe {
+-    ///     for i in 0..x.len() {
+-    ///         *x_ptr.offset(i as isize) += 2;
+-    ///     }
+-    /// }
+-    /// assert_eq!(x, &[3, 4, 6]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn as_mut_ptr(&mut self) -> *mut T {
+-        core_slice::SliceExt::as_mut_ptr(self)
+-    }
+-
+-    /// Swaps two elements in the slice.
+-    ///
+-    /// # Arguments
+-    ///
+-    /// * a - The index of the first element
+-    /// * b - The index of the second element
+-    ///
+-    /// # Panics
+-    ///
+-    /// Panics if `a` or `b` are out of bounds.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let mut v = ["a", "b", "c", "d"];
+-    /// v.swap(1, 3);
+-    /// assert!(v == ["a", "d", "c", "b"]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn swap(&mut self, a: usize, b: usize) {
+-        core_slice::SliceExt::swap(self, a, b)
+-    }
+-
+-    /// Reverses the order of elements in the slice, in place.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let mut v = [1, 2, 3];
+-    /// v.reverse();
+-    /// assert!(v == [3, 2, 1]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn reverse(&mut self) {
+-        core_slice::SliceExt::reverse(self)
+-    }
+-
+-    /// Returns an iterator over the slice.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let x = &[1, 2, 4];
+-    /// let mut iterator = x.iter();
+-    ///
+-    /// assert_eq!(iterator.next(), Some(&1));
+-    /// assert_eq!(iterator.next(), Some(&2));
+-    /// assert_eq!(iterator.next(), Some(&4));
+-    /// assert_eq!(iterator.next(), None);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn iter(&self) -> Iter<T> {
+-        core_slice::SliceExt::iter(self)
+-    }
+-
+-    /// Returns an iterator that allows modifying each value.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let x = &mut [1, 2, 4];
+-    /// for elem in x.iter_mut() {
+-    ///     *elem += 2;
+-    /// }
+-    /// assert_eq!(x, &[3, 4, 6]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn iter_mut(&mut self) -> IterMut<T> {
+-        core_slice::SliceExt::iter_mut(self)
+-    }
+-
+-    /// Returns an iterator over all contiguous windows of length
+-    /// `size`. The windows overlap. If the slice is shorter than
+-    /// `size`, the iterator returns no values.
+-    ///
+-    /// # Panics
+-    ///
+-    /// Panics if `size` is 0.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let slice = ['r', 'u', 's', 't'];
+-    /// let mut iter = slice.windows(2);
+-    /// assert_eq!(iter.next().unwrap(), &['r', 'u']);
+-    /// assert_eq!(iter.next().unwrap(), &['u', 's']);
+-    /// assert_eq!(iter.next().unwrap(), &['s', 't']);
+-    /// assert!(iter.next().is_none());
+-    /// ```
+-    ///
+-    /// If the slice is shorter than `size`:
+-    ///
+-    /// ```
+-    /// let slice = ['f', 'o', 'o'];
+-    /// let mut iter = slice.windows(4);
+-    /// assert!(iter.next().is_none());
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn windows(&self, size: usize) -> Windows<T> {
+-        core_slice::SliceExt::windows(self, size)
+-    }
+-
+-    /// Returns an iterator over `chunk_size` elements of the slice at a
+-    /// time. The chunks are slices and do not overlap. If `chunk_size` does
+-    /// not divide the length of the slice, then the last chunk will
+-    /// not have length `chunk_size`.
+-    ///
+-    /// See [`exact_chunks`] for a variant of this iterator that returns chunks
+-    /// of always exactly `chunk_size` elements.
+-    ///
+-    /// # Panics
+-    ///
+-    /// Panics if `chunk_size` is 0.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let slice = ['l', 'o', 'r', 'e', 'm'];
+-    /// let mut iter = slice.chunks(2);
+-    /// assert_eq!(iter.next().unwrap(), &['l', 'o']);
+-    /// assert_eq!(iter.next().unwrap(), &['r', 'e']);
+-    /// assert_eq!(iter.next().unwrap(), &['m']);
+-    /// assert!(iter.next().is_none());
+-    /// ```
+-    ///
+-    /// [`exact_chunks`]: #method.exact_chunks
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn chunks(&self, chunk_size: usize) -> Chunks<T> {
+-        core_slice::SliceExt::chunks(self, chunk_size)
+-    }
+-
+-    // /// Returns an iterator over `chunk_size` elements of the slice at a
+-    // /// time. The chunks are slices and do not overlap. If `chunk_size` does
+-    // /// not divide the length of the slice, then the last up to `chunk_size-1`
+-    // /// elements will be omitted.
+-    // ///
+-    // /// Due to each chunk having exactly `chunk_size` elements, the compiler
+-    // /// can often optimize the resulting code better than in the case of
+-    // /// [`chunks`].
+-    // ///
+-    // /// # Panics
+-    // ///
+-    // /// Panics if `chunk_size` is 0.
+-    // ///
+-    // /// # Examples
+-    // ///
+-    // /// ```
+-    // /// #![feature(exact_chunks)]
+-    // ///
+-    // /// let slice = ['l', 'o', 'r', 'e', 'm'];
+-    // /// let mut iter = slice.exact_chunks(2);
+-    // /// assert_eq!(iter.next().unwrap(), &['l', 'o']);
+-    // /// assert_eq!(iter.next().unwrap(), &['r', 'e']);
+-    // /// assert!(iter.next().is_none());
+-    // /// ```
+-    // ///
+-    // /// [`chunks`]: #method.chunks
+-    // #[unstable(feature = "exact_chunks", issue = "47115")]
+-    // #[inline]
+-    // pub fn exact_chunks(&self, chunk_size: usize) -> ExactChunks<T> {
+-    //     core_slice::SliceExt::exact_chunks(self, chunk_size)
+-    // }
+-
+-    /// Returns an iterator over `chunk_size` elements of the slice at a time.
+-    /// The chunks are mutable slices, and do not overlap. If `chunk_size` does
+-    /// not divide the length of the slice, then the last chunk will not
+-    /// have length `chunk_size`.
+-    ///
+-    /// See [`exact_chunks_mut`] for a variant of this iterator that returns chunks
+-    /// of always exactly `chunk_size` elements.
+-    ///
+-    /// # Panics
+-    ///
+-    /// Panics if `chunk_size` is 0.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let v = &mut [0, 0, 0, 0, 0];
+-    /// let mut count = 1;
+-    ///
+-    /// for chunk in v.chunks_mut(2) {
+-    ///     for elem in chunk.iter_mut() {
+-    ///         *elem += count;
+-    ///     }
+-    ///     count += 1;
+-    /// }
+-    /// assert_eq!(v, &[1, 1, 2, 2, 3]);
+-    /// ```
+-    ///
+-    /// [`exact_chunks_mut`]: #method.exact_chunks_mut
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn chunks_mut(&mut self, chunk_size: usize) -> ChunksMut<T> {
+-        core_slice::SliceExt::chunks_mut(self, chunk_size)
+-    }
+-
+-    // /// Returns an iterator over `chunk_size` elements of the slice at a time.
+-    // /// The chunks are mutable slices, and do not overlap. If `chunk_size` does
+-    // /// not divide the length of the slice, then the last up to `chunk_size-1`
+-    // /// elements will be omitted.
+-    // ///
+-    // ///
+-    // /// Due to each chunk having exactly `chunk_size` elements, the compiler
+-    // /// can often optimize the resulting code better than in the case of
+-    // /// [`chunks_mut`].
+-    // ///
+-    // /// # Panics
+-    // ///
+-    // /// Panics if `chunk_size` is 0.
+-    // ///
+-    // /// # Examples
+-    // ///
+-    // /// ```
+-    // /// #![feature(exact_chunks)]
+-    // ///
+-    // /// let v = &mut [0, 0, 0, 0, 0];
+-    // /// let mut count = 1;
+-    // ///
+-    // /// for chunk in v.exact_chunks_mut(2) {
+-    // ///     for elem in chunk.iter_mut() {
+-    // ///         *elem += count;
+-    // ///     }
+-    // ///     count += 1;
+-    // /// }
+-    // /// assert_eq!(v, &[1, 1, 2, 2, 0]);
+-    // /// ```
+-    // ///
+-    // /// [`chunks_mut`]: #method.chunks_mut
+-    // #[unstable(feature = "exact_chunks", issue = "47115")]
+-    // #[inline]
+-    // pub fn exact_chunks_mut(&mut self, chunk_size: usize) -> ExactChunksMut<T> {
+-    //     core_slice::SliceExt::exact_chunks_mut(self, chunk_size)
+-    // }
+-
+-    /// Divides one slice into two at an index.
+-    ///
+-    /// The first will contain all indices from `[0, mid)` (excluding
+-    /// the index `mid` itself) and the second will contain all
+-    /// indices from `[mid, len)` (excluding the index `len` itself).
+-    ///
+-    /// # Panics
+-    ///
+-    /// Panics if `mid > len`.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let v = [1, 2, 3, 4, 5, 6];
+-    ///
+-    /// {
+-    ///    let (left, right) = v.split_at(0);
+-    ///    assert!(left == []);
+-    ///    assert!(right == [1, 2, 3, 4, 5, 6]);
+-    /// }
+-    ///
+-    /// {
+-    ///     let (left, right) = v.split_at(2);
+-    ///     assert!(left == [1, 2]);
+-    ///     assert!(right == [3, 4, 5, 6]);
+-    /// }
+-    ///
+-    /// {
+-    ///     let (left, right) = v.split_at(6);
+-    ///     assert!(left == [1, 2, 3, 4, 5, 6]);
+-    ///     assert!(right == []);
+-    /// }
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn split_at(&self, mid: usize) -> (&[T], &[T]) {
+-        core_slice::SliceExt::split_at(self, mid)
+-    }
+-
+-    /// Divides one mutable slice into two at an index.
+-    ///
+-    /// The first will contain all indices from `[0, mid)` (excluding
+-    /// the index `mid` itself) and the second will contain all
+-    /// indices from `[mid, len)` (excluding the index `len` itself).
+-    ///
+-    /// # Panics
+-    ///
+-    /// Panics if `mid > len`.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let mut v = [1, 0, 3, 0, 5, 6];
+-    /// // scoped to restrict the lifetime of the borrows
+-    /// {
+-    ///     let (left, right) = v.split_at_mut(2);
+-    ///     assert!(left == [1, 0]);
+-    ///     assert!(right == [3, 0, 5, 6]);
+-    ///     left[1] = 2;
+-    ///     right[1] = 4;
+-    /// }
+-    /// assert!(v == [1, 2, 3, 4, 5, 6]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn split_at_mut(&mut self, mid: usize) -> (&mut [T], &mut [T]) {
+-        core_slice::SliceExt::split_at_mut(self, mid)
+-    }
+-
+-    /// Returns an iterator over subslices separated by elements that match
+-    /// `pred`. The matched element is not contained in the subslices.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let slice = [10, 40, 33, 20];
+-    /// let mut iter = slice.split(|num| num % 3 == 0);
+-    ///
+-    /// assert_eq!(iter.next().unwrap(), &[10, 40]);
+-    /// assert_eq!(iter.next().unwrap(), &[20]);
+-    /// assert!(iter.next().is_none());
+-    /// ```
+-    ///
+-    /// If the first element is matched, an empty slice will be the first item
+-    /// returned by the iterator. Similarly, if the last element in the slice
+-    /// is matched, an empty slice will be the last item returned by the
+-    /// iterator:
+-    ///
+-    /// ```
+-    /// let slice = [10, 40, 33];
+-    /// let mut iter = slice.split(|num| num % 3 == 0);
+-    ///
+-    /// assert_eq!(iter.next().unwrap(), &[10, 40]);
+-    /// assert_eq!(iter.next().unwrap(), &[]);
+-    /// assert!(iter.next().is_none());
+-    /// ```
+-    ///
+-    /// If two matched elements are directly adjacent, an empty slice will be
+-    /// present between them:
+-    ///
+-    /// ```
+-    /// let slice = [10, 6, 33, 20];
+-    /// let mut iter = slice.split(|num| num % 3 == 0);
+-    ///
+-    /// assert_eq!(iter.next().unwrap(), &[10]);
+-    /// assert_eq!(iter.next().unwrap(), &[]);
+-    /// assert_eq!(iter.next().unwrap(), &[20]);
+-    /// assert!(iter.next().is_none());
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn split<F>(&self, pred: F) -> Split<T, F>
+-        where F: FnMut(&T) -> bool
+-    {
+-        core_slice::SliceExt::split(self, pred)
+-    }
+-
+-    /// Returns an iterator over mutable subslices separated by elements that
+-    /// match `pred`. The matched element is not contained in the subslices.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let mut v = [10, 40, 30, 20, 60, 50];
+-    ///
+-    /// for group in v.split_mut(|num| *num % 3 == 0) {
+-    ///     group[0] = 1;
+-    /// }
+-    /// assert_eq!(v, [1, 40, 30, 1, 60, 1]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn split_mut<F>(&mut self, pred: F) -> SplitMut<T, F>
+-        where F: FnMut(&T) -> bool
+-    {
+-        core_slice::SliceExt::split_mut(self, pred)
+-    }
+-
+-    /// Returns an iterator over subslices separated by elements that match
+-    /// `pred`, starting at the end of the slice and working backwards.
+-    /// The matched element is not contained in the subslices.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// #![feature(slice_rsplit)]
+-    ///
+-    /// let slice = [11, 22, 33, 0, 44, 55];
+-    /// let mut iter = slice.rsplit(|num| *num == 0);
+-    ///
+-    /// assert_eq!(iter.next().unwrap(), &[44, 55]);
+-    /// assert_eq!(iter.next().unwrap(), &[11, 22, 33]);
+-    /// assert_eq!(iter.next(), None);
+-    /// ```
+-    ///
+-    /// As with `split()`, if the first or last element is matched, an empty
+-    /// slice will be the first (or last) item returned by the iterator.
+-    ///
+-    /// ```
+-    /// #![feature(slice_rsplit)]
+-    ///
+-    /// let v = &[0, 1, 1, 2, 3, 5, 8];
+-    /// let mut it = v.rsplit(|n| *n % 2 == 0);
+-    /// assert_eq!(it.next().unwrap(), &[]);
+-    /// assert_eq!(it.next().unwrap(), &[3, 5]);
+-    /// assert_eq!(it.next().unwrap(), &[1, 1]);
+-    /// assert_eq!(it.next().unwrap(), &[]);
+-    /// assert_eq!(it.next(), None);
+-    /// ```
+-    #[unstable(feature = "slice_rsplit", issue = "41020")]
+-    #[inline]
+-    pub fn rsplit<F>(&self, pred: F) -> RSplit<T, F>
+-        where F: FnMut(&T) -> bool
+-    {
+-        core_slice::SliceExt::rsplit(self, pred)
+-    }
+-
+-    /// Returns an iterator over mutable subslices separated by elements that
+-    /// match `pred`, starting at the end of the slice and working
+-    /// backwards. The matched element is not contained in the subslices.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// #![feature(slice_rsplit)]
+-    ///
+-    /// let mut v = [100, 400, 300, 200, 600, 500];
+-    ///
+-    /// let mut count = 0;
+-    /// for group in v.rsplit_mut(|num| *num % 3 == 0) {
+-    ///     count += 1;
+-    ///     group[0] = count;
+-    /// }
+-    /// assert_eq!(v, [3, 400, 300, 2, 600, 1]);
+-    /// ```
+-    ///
+-    #[unstable(feature = "slice_rsplit", issue = "41020")]
+-    #[inline]
+-    pub fn rsplit_mut<F>(&mut self, pred: F) -> RSplitMut<T, F>
+-        where F: FnMut(&T) -> bool
+-    {
+-        core_slice::SliceExt::rsplit_mut(self, pred)
+-    }
+-
+-    /// Returns an iterator over subslices separated by elements that match
+-    /// `pred`, limited to returning at most `n` items. The matched element is
+-    /// not contained in the subslices.
+-    ///
+-    /// The last element returned, if any, will contain the remainder of the
+-    /// slice.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Print the slice split once by numbers divisible by 3 (i.e. `[10, 40]`,
+-    /// `[20, 60, 50]`):
+-    ///
+-    /// ```
+-    /// let v = [10, 40, 30, 20, 60, 50];
+-    ///
+-    /// for group in v.splitn(2, |num| *num % 3 == 0) {
+-    ///     println!("{:?}", group);
+-    /// }
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn splitn<F>(&self, n: usize, pred: F) -> SplitN<T, F>
+-        where F: FnMut(&T) -> bool
+-    {
+-        core_slice::SliceExt::splitn(self, n, pred)
+-    }
+-
+-    /// Returns an iterator over subslices separated by elements that match
+-    /// `pred`, limited to returning at most `n` items. The matched element is
+-    /// not contained in the subslices.
+-    ///
+-    /// The last element returned, if any, will contain the remainder of the
+-    /// slice.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let mut v = [10, 40, 30, 20, 60, 50];
+-    ///
+-    /// for group in v.splitn_mut(2, |num| *num % 3 == 0) {
+-    ///     group[0] = 1;
+-    /// }
+-    /// assert_eq!(v, [1, 40, 30, 1, 60, 50]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn splitn_mut<F>(&mut self, n: usize, pred: F) -> SplitNMut<T, F>
+-        where F: FnMut(&T) -> bool
+-    {
+-        core_slice::SliceExt::splitn_mut(self, n, pred)
+-    }
+-
+-    /// Returns an iterator over subslices separated by elements that match
+-    /// `pred` limited to returning at most `n` items. This starts at the end of
+-    /// the slice and works backwards.  The matched element is not contained in
+-    /// the subslices.
+-    ///
+-    /// The last element returned, if any, will contain the remainder of the
+-    /// slice.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Print the slice split once, starting from the end, by numbers divisible
+-    /// by 3 (i.e. `[50]`, `[10, 40, 30, 20]`):
+-    ///
+-    /// ```
+-    /// let v = [10, 40, 30, 20, 60, 50];
+-    ///
+-    /// for group in v.rsplitn(2, |num| *num % 3 == 0) {
+-    ///     println!("{:?}", group);
+-    /// }
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn rsplitn<F>(&self, n: usize, pred: F) -> RSplitN<T, F>
+-        where F: FnMut(&T) -> bool
+-    {
+-        core_slice::SliceExt::rsplitn(self, n, pred)
+-    }
+-
+-    /// Returns an iterator over subslices separated by elements that match
+-    /// `pred` limited to returning at most `n` items. This starts at the end of
+-    /// the slice and works backwards. The matched element is not contained in
+-    /// the subslices.
+-    ///
+-    /// The last element returned, if any, will contain the remainder of the
+-    /// slice.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let mut s = [10, 40, 30, 20, 60, 50];
+-    ///
+-    /// for group in s.rsplitn_mut(2, |num| *num % 3 == 0) {
+-    ///     group[0] = 1;
+-    /// }
+-    /// assert_eq!(s, [1, 40, 30, 20, 60, 1]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn rsplitn_mut<F>(&mut self, n: usize, pred: F) -> RSplitNMut<T, F>
+-        where F: FnMut(&T) -> bool
+-    {
+-        core_slice::SliceExt::rsplitn_mut(self, n, pred)
+-    }
+-
+-    /// Returns `true` if the slice contains an element with the given value.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let v = [10, 40, 30];
+-    /// assert!(v.contains(&30));
+-    /// assert!(!v.contains(&50));
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    pub fn contains(&self, x: &T) -> bool
+-        where T: PartialEq
+-    {
+-        core_slice::SliceExt::contains(self, x)
+-    }
+-
+-    /// Returns `true` if `needle` is a prefix of the slice.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let v = [10, 40, 30];
+-    /// assert!(v.starts_with(&[10]));
+-    /// assert!(v.starts_with(&[10, 40]));
+-    /// assert!(!v.starts_with(&[50]));
+-    /// assert!(!v.starts_with(&[10, 50]));
+-    /// ```
+-    ///
+-    /// Always returns `true` if `needle` is an empty slice:
+-    ///
+-    /// ```
+-    /// let v = &[10, 40, 30];
+-    /// assert!(v.starts_with(&[]));
+-    /// let v: &[u8] = &[];
+-    /// assert!(v.starts_with(&[]));
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    pub fn starts_with(&self, needle: &[T]) -> bool
+-        where T: PartialEq
+-    {
+-        core_slice::SliceExt::starts_with(self, needle)
+-    }
+-
+-    /// Returns `true` if `needle` is a suffix of the slice.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let v = [10, 40, 30];
+-    /// assert!(v.ends_with(&[30]));
+-    /// assert!(v.ends_with(&[40, 30]));
+-    /// assert!(!v.ends_with(&[50]));
+-    /// assert!(!v.ends_with(&[50, 30]));
+-    /// ```
+-    ///
+-    /// Always returns `true` if `needle` is an empty slice:
+-    ///
+-    /// ```
+-    /// let v = &[10, 40, 30];
+-    /// assert!(v.ends_with(&[]));
+-    /// let v: &[u8] = &[];
+-    /// assert!(v.ends_with(&[]));
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    pub fn ends_with(&self, needle: &[T]) -> bool
+-        where T: PartialEq
+-    {
+-        core_slice::SliceExt::ends_with(self, needle)
+-    }
+-
+-    /// Binary searches this sorted slice for a given element.
+-    ///
+-    /// If the value is found then `Ok` is returned, containing the
+-    /// index of the matching element; if the value is not found then
+-    /// `Err` is returned, containing the index where a matching
+-    /// element could be inserted while maintaining sorted order.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Looks up a series of four elements. The first is found, with a
+-    /// uniquely determined position; the second and third are not
+-    /// found; the fourth could match any position in `[1, 4]`.
+-    ///
+-    /// ```
+-    /// let s = [0, 1, 1, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55];
+-    ///
+-    /// assert_eq!(s.binary_search(&13),  Ok(9));
+-    /// assert_eq!(s.binary_search(&4),   Err(7));
+-    /// assert_eq!(s.binary_search(&100), Err(13));
+-    /// let r = s.binary_search(&1);
+-    /// assert!(match r { Ok(1...4) => true, _ => false, });
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    pub fn binary_search(&self, x: &T) -> Result<usize, usize>
+-        where T: Ord
+-    {
+-        core_slice::SliceExt::binary_search(self, x)
+-    }
+-
+-    /// Binary searches this sorted slice with a comparator function.
+-    ///
+-    /// The comparator function should implement an order consistent
+-    /// with the sort order of the underlying slice, returning an
+-    /// order code that indicates whether its argument is `Less`,
+-    /// `Equal` or `Greater` the desired target.
+-    ///
+-    /// If a matching value is found then returns `Ok`, containing
+-    /// the index for the matched element; if no match is found then
+-    /// `Err` is returned, containing the index where a matching
+-    /// element could be inserted while maintaining sorted order.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Looks up a series of four elements. The first is found, with a
+-    /// uniquely determined position; the second and third are not
+-    /// found; the fourth could match any position in `[1, 4]`.
+-    ///
+-    /// ```
+-    /// let s = [0, 1, 1, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55];
+-    ///
+-    /// let seek = 13;
+-    /// assert_eq!(s.binary_search_by(|probe| probe.cmp(&seek)), Ok(9));
+-    /// let seek = 4;
+-    /// assert_eq!(s.binary_search_by(|probe| probe.cmp(&seek)), Err(7));
+-    /// let seek = 100;
+-    /// assert_eq!(s.binary_search_by(|probe| probe.cmp(&seek)), Err(13));
+-    /// let seek = 1;
+-    /// let r = s.binary_search_by(|probe| probe.cmp(&seek));
+-    /// assert!(match r { Ok(1...4) => true, _ => false, });
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn binary_search_by<'a, F>(&'a self, f: F) -> Result<usize, usize>
+-        where F: FnMut(&'a T) -> Ordering
+-    {
+-        core_slice::SliceExt::binary_search_by(self, f)
+-    }
+-
+-    /// Binary searches this sorted slice with a key extraction function.
+-    ///
+-    /// Assumes that the slice is sorted by the key, for instance with
+-    /// [`sort_by_key`] using the same key extraction function.
+-    ///
+-    /// If a matching value is found then returns `Ok`, containing the
+-    /// index for the matched element; if no match is found then `Err`
+-    /// is returned, containing the index where a matching element could
+-    /// be inserted while maintaining sorted order.
+-    ///
+-    /// [`sort_by_key`]: #method.sort_by_key
+-    ///
+-    /// # Examples
+-    ///
+-    /// Looks up a series of four elements in a slice of pairs sorted by
+-    /// their second elements. The first is found, with a uniquely
+-    /// determined position; the second and third are not found; the
+-    /// fourth could match any position in `[1, 4]`.
+-    ///
+-    /// ```
+-    /// let s = [(0, 0), (2, 1), (4, 1), (5, 1), (3, 1),
+-    ///          (1, 2), (2, 3), (4, 5), (5, 8), (3, 13),
+-    ///          (1, 21), (2, 34), (4, 55)];
+-    ///
+-    /// assert_eq!(s.binary_search_by_key(&13, |&(a,b)| b),  Ok(9));
+-    /// assert_eq!(s.binary_search_by_key(&4, |&(a,b)| b),   Err(7));
+-    /// assert_eq!(s.binary_search_by_key(&100, |&(a,b)| b), Err(13));
+-    /// let r = s.binary_search_by_key(&1, |&(a,b)| b);
+-    /// assert!(match r { Ok(1...4) => true, _ => false, });
+-    /// ```
+-    #[stable(feature = "slice_binary_search_by_key", since = "1.10.0")]
+-    #[inline]
+-    pub fn binary_search_by_key<'a, B, F>(&'a self, b: &B, f: F) -> Result<usize, usize>
+-        where F: FnMut(&'a T) -> B,
+-              B: Ord
+-    {
+-        core_slice::SliceExt::binary_search_by_key(self, b, f)
+-    }
+-
+-    // /// Sorts the slice.
+-    // ///
+-    // /// This sort is stable (i.e. does not reorder equal elements) and `O(n log n)` worst-case.
+-    // ///
+-    // /// When applicable, unstable sorting is preferred because it is generally faster than stable
+-    // /// sorting and it doesn't allocate auxiliary memory.
+-    // /// See [`sort_unstable`](#method.sort_unstable).
+-    // ///
+-    // /// # Current implementation
+-    // ///
+-    // /// The current algorithm is an adaptive, iterative merge sort inspired by
+-    // /// [timsort](https://en.wikipedia.org/wiki/Timsort).
+-    // /// It is designed to be very fast in cases where the slice is nearly sorted, or consists of
+-    // /// two or more sorted sequences concatenated one after another.
+-    // ///
+-    // /// Also, it allocates temporary storage half the size of `self`, but for short slices a
+-    // /// non-allocating insertion sort is used instead.
+-    // ///
+-    // /// # Examples
+-    // ///
+-    // /// ```
+-    // /// let mut v = [-5, 4, 1, -3, 2];
+-    // ///
+-    // /// v.sort();
+-    // /// assert!(v == [-5, -3, 1, 2, 4]);
+-    // /// ```
+-    // #[stable(feature = "rust1", since = "1.0.0")]
+-    // #[inline]
+-    // pub fn sort(&mut self)
+-    //     where T: Ord
+-    // {
+-    //     merge_sort(self, |a, b| a.lt(b));
+-    // }
+-
+-    // /// Sorts the slice with a comparator function.
+-    // ///
+-    // /// This sort is stable (i.e. does not reorder equal elements) and `O(n log n)` worst-case.
+-    // ///
+-    // /// When applicable, unstable sorting is preferred because it is generally faster than stable
+-    // /// sorting and it doesn't allocate auxiliary memory.
+-    // /// See [`sort_unstable_by`](#method.sort_unstable_by).
+-    // ///
+-    // /// # Current implementation
+-    // ///
+-    // /// The current algorithm is an adaptive, iterative merge sort inspired by
+-    // /// [timsort](https://en.wikipedia.org/wiki/Timsort).
+-    // /// It is designed to be very fast in cases where the slice is nearly sorted, or consists of
+-    // /// two or more sorted sequences concatenated one after another.
+-    // ///
+-    // /// Also, it allocates temporary storage half the size of `self`, but for short slices a
+-    // /// non-allocating insertion sort is used instead.
+-    // ///
+-    // /// # Examples
+-    // ///
+-    // /// ```
+-    // /// let mut v = [5, 4, 1, 3, 2];
+-    // /// v.sort_by(|a, b| a.cmp(b));
+-    // /// assert!(v == [1, 2, 3, 4, 5]);
+-    // ///
+-    // /// // reverse sorting
+-    // /// v.sort_by(|a, b| b.cmp(a));
+-    // /// assert!(v == [5, 4, 3, 2, 1]);
+-    // /// ```
+-    // #[stable(feature = "rust1", since = "1.0.0")]
+-    // #[inline]
+-    // pub fn sort_by<F>(&mut self, mut compare: F)
+-    //     where F: FnMut(&T, &T) -> Ordering
+-    // {
+-    //     merge_sort(self, |a, b| compare(a, b) == Less);
+-    // }
+-
+-    // /// Sorts the slice with a key extraction function.
+-    // ///
+-    // /// This sort is stable (i.e. does not reorder equal elements) and `O(n log n)` worst-case.
+-    // ///
+-    // /// When applicable, unstable sorting is preferred because it is generally faster than stable
+-    // /// sorting and it doesn't allocate auxiliary memory.
+-    // /// See [`sort_unstable_by_key`](#method.sort_unstable_by_key).
+-    // ///
+-    // /// # Current implementation
+-    // ///
+-    // /// The current algorithm is an adaptive, iterative merge sort inspired by
+-    // /// [timsort](https://en.wikipedia.org/wiki/Timsort).
+-    // /// It is designed to be very fast in cases where the slice is nearly sorted, or consists of
+-    // /// two or more sorted sequences concatenated one after another.
+-    // ///
+-    // /// Also, it allocates temporary storage half the size of `self`, but for short slices a
+-    // /// non-allocating insertion sort is used instead.
+-    // ///
+-    // /// # Examples
+-    // ///
+-    // /// ```
+-    // /// let mut v = [-5i32, 4, 1, -3, 2];
+-    // ///
+-    // /// v.sort_by_key(|k| k.abs());
+-    // /// assert!(v == [1, 2, -3, 4, -5]);
+-    // /// ```
+-    // #[stable(feature = "slice_sort_by_key", since = "1.7.0")]
+-    // #[inline]
+-    // pub fn sort_by_key<B, F>(&mut self, mut f: F)
+-    //     where F: FnMut(&T) -> B, B: Ord
+-    // {
+-    //     merge_sort(self, |a, b| f(a).lt(&f(b)));
+-    // }
+-
+-    /// Sorts the slice, but may not preserve the order of equal elements.
+-    ///
+-    /// This sort is unstable (i.e. may reorder equal elements), in-place (i.e. does not allocate),
+-    /// and `O(n log n)` worst-case.
+-    ///
+-    /// # Current implementation
+-    ///
+-    /// The current algorithm is based on [pattern-defeating quicksort][pdqsort] by Orson Peters,
+-    /// which combines the fast average case of randomized quicksort with the fast worst case of
+-    /// heapsort, while achieving linear time on slices with certain patterns. It uses some
+-    /// randomization to avoid degenerate cases, but with a fixed seed to always provide
+-    /// deterministic behavior.
+-    ///
+-    /// It is typically faster than stable sorting, except in a few special cases, e.g. when the
+-    /// slice consists of several concatenated sorted sequences.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let mut v = [-5, 4, 1, -3, 2];
+-    ///
+-    /// v.sort_unstable();
+-    /// assert!(v == [-5, -3, 1, 2, 4]);
+-    /// ```
+-    ///
+-    /// [pdqsort]: https://github.com/orlp/pdqsort
+-    #[stable(feature = "sort_unstable", since = "1.20.0")]
+-    #[inline]
+-    pub fn sort_unstable(&mut self)
+-        where T: Ord
+-    {
+-        core_slice::SliceExt::sort_unstable(self);
+-    }
+-
+-    /// Sorts the slice with a comparator function, but may not preserve the order of equal
+-    /// elements.
+-    ///
+-    /// This sort is unstable (i.e. may reorder equal elements), in-place (i.e. does not allocate),
+-    /// and `O(n log n)` worst-case.
+-    ///
+-    /// # Current implementation
+-    ///
+-    /// The current algorithm is based on [pattern-defeating quicksort][pdqsort] by Orson Peters,
+-    /// which combines the fast average case of randomized quicksort with the fast worst case of
+-    /// heapsort, while achieving linear time on slices with certain patterns. It uses some
+-    /// randomization to avoid degenerate cases, but with a fixed seed to always provide
+-    /// deterministic behavior.
+-    ///
+-    /// It is typically faster than stable sorting, except in a few special cases, e.g. when the
+-    /// slice consists of several concatenated sorted sequences.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let mut v = [5, 4, 1, 3, 2];
+-    /// v.sort_unstable_by(|a, b| a.cmp(b));
+-    /// assert!(v == [1, 2, 3, 4, 5]);
+-    ///
+-    /// // reverse sorting
+-    /// v.sort_unstable_by(|a, b| b.cmp(a));
+-    /// assert!(v == [5, 4, 3, 2, 1]);
+-    /// ```
+-    ///
+-    /// [pdqsort]: https://github.com/orlp/pdqsort
+-    #[stable(feature = "sort_unstable", since = "1.20.0")]
+-    #[inline]
+-    pub fn sort_unstable_by<F>(&mut self, compare: F)
+-        where F: FnMut(&T, &T) -> Ordering
+-    {
+-        core_slice::SliceExt::sort_unstable_by(self, compare);
+-    }
+-
+-    /// Sorts the slice with a key extraction function, but may not preserve the order of equal
+-    /// elements.
+-    ///
+-    /// This sort is unstable (i.e. may reorder equal elements), in-place (i.e. does not allocate),
+-    /// and `O(n log n)` worst-case.
+-    ///
+-    /// # Current implementation
+-    ///
+-    /// The current algorithm is based on [pattern-defeating quicksort][pdqsort] by Orson Peters,
+-    /// which combines the fast average case of randomized quicksort with the fast worst case of
+-    /// heapsort, while achieving linear time on slices with certain patterns. It uses some
+-    /// randomization to avoid degenerate cases, but with a fixed seed to always provide
+-    /// deterministic behavior.
+-    ///
+-    /// It is typically faster than stable sorting, except in a few special cases, e.g. when the
+-    /// slice consists of several concatenated sorted sequences.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let mut v = [-5i32, 4, 1, -3, 2];
+-    ///
+-    /// v.sort_unstable_by_key(|k| k.abs());
+-    /// assert!(v == [1, 2, -3, 4, -5]);
+-    /// ```
+-    ///
+-    /// [pdqsort]: https://github.com/orlp/pdqsort
+-    #[stable(feature = "sort_unstable", since = "1.20.0")]
+-    #[inline]
+-    pub fn sort_unstable_by_key<B, F>(&mut self, f: F)
+-        where F: FnMut(&T) -> B,
+-              B: Ord
+-    {
+-        core_slice::SliceExt::sort_unstable_by_key(self, f);
+-    }
+-
+-    // /// Rotates the slice in-place such that the first `mid` elements of the
+-    // /// slice move to the end while the last `self.len() - mid` elements move to
+-    // /// the front. After calling `rotate_left`, the element previously at index
+-    // /// `mid` will become the first element in the slice.
+-    // ///
+-    // /// # Panics
+-    // ///
+-    // /// This function will panic if `mid` is greater than the length of the
+-    // /// slice. Note that `mid == self.len()` does _not_ panic and is a no-op
+-    // /// rotation.
+-    // ///
+-    // /// # Complexity
+-    // ///
+-    // /// Takes linear (in `self.len()`) time.
+-    // ///
+-    // /// # Examples
+-    // ///
+-    // /// ```
+-    // /// #![feature(slice_rotate)]
+-    // ///
+-    // /// let mut a = ['a', 'b', 'c', 'd', 'e', 'f'];
+-    // /// a.rotate_left(2);
+-    // /// assert_eq!(a, ['c', 'd', 'e', 'f', 'a', 'b']);
+-    // /// ```
+-    // ///
+-    // /// Rotating a subslice:
+-    // ///
+-    // /// ```
+-    // /// #![feature(slice_rotate)]
+-    // ///
+-    // /// let mut a = ['a', 'b', 'c', 'd', 'e', 'f'];
+-    // /// a[1..5].rotate_left(1);
+-    // /// assert_eq!(a, ['a', 'c', 'd', 'e', 'b', 'f']);
+-    // /// ```
+-    // #[unstable(feature = "slice_rotate", issue = "41891")]
+-    // pub fn rotate_left(&mut self, mid: usize) {
+-    //     core_slice::SliceExt::rotate_left(self, mid);
+-    // }
+-
+-    // #[unstable(feature = "slice_rotate", issue = "41891")]
+-    // #[rustc_deprecated(since = "", reason = "renamed to `rotate_left`")]
+-    // pub fn rotate(&mut self, mid: usize) {
+-    //     core_slice::SliceExt::rotate_left(self, mid);
+-    // }
+-
+-    // /// Rotates the slice in-place such that the first `self.len() - k`
+-    // /// elements of the slice move to the end while the last `k` elements move
+-    // /// to the front. After calling `rotate_right`, the element previously at
+-    // /// index `self.len() - k` will become the first element in the slice.
+-    // ///
+-    // /// # Panics
+-    // ///
+-    // /// This function will panic if `k` is greater than the length of the
+-    // /// slice. Note that `k == self.len()` does _not_ panic and is a no-op
+-    // /// rotation.
+-    // ///
+-    // /// # Complexity
+-    // ///
+-    // /// Takes linear (in `self.len()`) time.
+-    // ///
+-    // /// # Examples
+-    // ///
+-    // /// ```
+-    // /// #![feature(slice_rotate)]
+-    // ///
+-    // /// let mut a = ['a', 'b', 'c', 'd', 'e', 'f'];
+-    // /// a.rotate_right(2);
+-    // /// assert_eq!(a, ['e', 'f', 'a', 'b', 'c', 'd']);
+-    // /// ```
+-    // ///
+-    // /// Rotate a subslice:
+-    // ///
+-    // /// ```
+-    // /// #![feature(slice_rotate)]
+-    // ///
+-    // /// let mut a = ['a', 'b', 'c', 'd', 'e', 'f'];
+-    // /// a[1..5].rotate_right(1);
+-    // /// assert_eq!(a, ['a', 'e', 'b', 'c', 'd', 'f']);
+-    // /// ```
+-    // #[unstable(feature = "slice_rotate", issue = "41891")]
+-    // pub fn rotate_right(&mut self, k: usize) {
+-    //     core_slice::SliceExt::rotate_right(self, k);
+-    // }
+-
+-    /// Copies the elements from `src` into `self`.
+-    ///
+-    /// The length of `src` must be the same as `self`.
+-    ///
+-    /// If `src` implements `Copy`, it can be more performant to use
+-    /// [`copy_from_slice`].
+-    ///
+-    /// # Panics
+-    ///
+-    /// This function will panic if the two slices have different lengths.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Cloning two elements from a slice into another:
+-    ///
+-    /// ```
+-    /// let src = [1, 2, 3, 4];
+-    /// let mut dst = [0, 0];
+-    ///
+-    /// dst.clone_from_slice(&src[2..]);
+-    ///
+-    /// assert_eq!(src, [1, 2, 3, 4]);
+-    /// assert_eq!(dst, [3, 4]);
+-    /// ```
+-    ///
+-    /// Rust enforces that there can only be one mutable reference with no
+-    /// immutable references to a particular piece of data in a particular
+-    /// scope. Because of this, attempting to use `clone_from_slice` on a
+-    /// single slice will result in a compile failure:
+-    ///
+-    /// ```compile_fail
+-    /// let mut slice = [1, 2, 3, 4, 5];
+-    ///
+-    /// slice[..2].clone_from_slice(&slice[3..]); // compile fail!
+-    /// ```
+-    ///
+-    /// To work around this, we can use [`split_at_mut`] to create two distinct
+-    /// sub-slices from a slice:
+-    ///
+-    /// ```
+-    /// let mut slice = [1, 2, 3, 4, 5];
+-    ///
+-    /// {
+-    ///     let (left, right) = slice.split_at_mut(2);
+-    ///     left.clone_from_slice(&right[1..]);
+-    /// }
+-    ///
+-    /// assert_eq!(slice, [4, 5, 3, 4, 5]);
+-    /// ```
+-    ///
+-    /// [`copy_from_slice`]: #method.copy_from_slice
+-    /// [`split_at_mut`]: #method.split_at_mut
+-    #[stable(feature = "clone_from_slice", since = "1.7.0")]
+-    pub fn clone_from_slice(&mut self, src: &[T]) where T: Clone {
+-        core_slice::SliceExt::clone_from_slice(self, src)
+-    }
+-
+-    /// Copies all elements from `src` into `self`, using a memcpy.
+-    ///
+-    /// The length of `src` must be the same as `self`.
+-    ///
+-    /// If `src` does not implement `Copy`, use [`clone_from_slice`].
+-    ///
+-    /// # Panics
+-    ///
+-    /// This function will panic if the two slices have different lengths.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Copying two elements from a slice into another:
+-    ///
+-    /// ```
+-    /// let src = [1, 2, 3, 4];
+-    /// let mut dst = [0, 0];
+-    ///
+-    /// dst.copy_from_slice(&src[2..]);
+-    ///
+-    /// assert_eq!(src, [1, 2, 3, 4]);
+-    /// assert_eq!(dst, [3, 4]);
+-    /// ```
+-    ///
+-    /// Rust enforces that there can only be one mutable reference with no
+-    /// immutable references to a particular piece of data in a particular
+-    /// scope. Because of this, attempting to use `copy_from_slice` on a
+-    /// single slice will result in a compile failure:
+-    ///
+-    /// ```compile_fail
+-    /// let mut slice = [1, 2, 3, 4, 5];
+-    ///
+-    /// slice[..2].copy_from_slice(&slice[3..]); // compile fail!
+-    /// ```
+-    ///
+-    /// To work around this, we can use [`split_at_mut`] to create two distinct
+-    /// sub-slices from a slice:
+-    ///
+-    /// ```
+-    /// let mut slice = [1, 2, 3, 4, 5];
+-    ///
+-    /// {
+-    ///     let (left, right) = slice.split_at_mut(2);
+-    ///     left.copy_from_slice(&right[1..]);
+-    /// }
+-    ///
+-    /// assert_eq!(slice, [4, 5, 3, 4, 5]);
+-    /// ```
+-    ///
+-    /// [`clone_from_slice`]: #method.clone_from_slice
+-    /// [`split_at_mut`]: #method.split_at_mut
+-    #[stable(feature = "copy_from_slice", since = "1.9.0")]
+-    pub fn copy_from_slice(&mut self, src: &[T]) where T: Copy {
+-        core_slice::SliceExt::copy_from_slice(self, src)
+-    }
+-
+-    /// Swaps all elements in `self` with those in `other`.
+-    ///
+-    /// The length of `other` must be the same as `self`.
+-    ///
+-    /// # Panics
+-    ///
+-    /// This function will panic if the two slices have different lengths.
+-    ///
+-    /// # Example
+-    ///
+-    /// Swapping two elements across slices:
+-    ///
+-    /// ```
+-    /// #![feature(swap_with_slice)]
+-    ///
+-    /// let mut slice1 = [0, 0];
+-    /// let mut slice2 = [1, 2, 3, 4];
+-    ///
+-    /// slice1.swap_with_slice(&mut slice2[2..]);
+-    ///
+-    /// assert_eq!(slice1, [3, 4]);
+-    /// assert_eq!(slice2, [1, 2, 0, 0]);
+-    /// ```
+-    ///
+-    /// Rust enforces that there can only be one mutable reference to a
+-    /// particular piece of data in a particular scope. Because of this,
+-    /// attempting to use `swap_with_slice` on a single slice will result in
+-    /// a compile failure:
+-    ///
+-    /// ```compile_fail
+-    /// #![feature(swap_with_slice)]
+-    ///
+-    /// let mut slice = [1, 2, 3, 4, 5];
+-    /// slice[..2].swap_with_slice(&mut slice[3..]); // compile fail!
+-    /// ```
+-    ///
+-    /// To work around this, we can use [`split_at_mut`] to create two distinct
+-    /// mutable sub-slices from a slice:
+-    ///
+-    /// ```
+-    /// #![feature(swap_with_slice)]
+-    ///
+-    /// let mut slice = [1, 2, 3, 4, 5];
+-    ///
+-    /// {
+-    ///     let (left, right) = slice.split_at_mut(2);
+-    ///     left.swap_with_slice(&mut right[1..]);
+-    /// }
+-    ///
+-    /// assert_eq!(slice, [4, 5, 3, 1, 2]);
+-    /// ```
+-    ///
+-    /// [`split_at_mut`]: #method.split_at_mut
+-    #[unstable(feature = "swap_with_slice", issue = "44030")]
+-    pub fn swap_with_slice(&mut self, other: &mut [T]) {
+-        core_slice::SliceExt::swap_with_slice(self, other)
+-    }
+-
+-    // /// Copies `self` into a new `Vec`.
+-    // ///
+-    // /// # Examples
+-    // ///
+-    // /// ```
+-    // /// let s = [10, 40, 30];
+-    // /// let x = s.to_vec();
+-    // /// // Here, `s` and `x` can be modified independently.
+-    // /// ```
+-    // #[rustc_conversion_suggestion]
+-    // #[stable(feature = "rust1", since = "1.0.0")]
+-    // #[inline]
+-    // pub fn to_vec(&self) -> Vec<T>
+-    //     where T: Clone
+-    // {
+-    //     // NB see hack module in this file
+-    //     hack::to_vec(self)
+-    // }
+-
+-    // /// Converts `self` into a vector without clones or allocation.
+-    // ///
+-    // /// The resulting vector can be converted back into a box via
+-    // /// `Vec<T>`'s `into_boxed_slice` method.
+-    // ///
+-    // /// # Examples
+-    // ///
+-    // /// ```
+-    // /// let s: Box<[i32]> = Box::new([10, 40, 30]);
+-    // /// let x = s.into_vec();
+-    // /// // `s` cannot be used anymore because it has been converted into `x`.
+-    // ///
+-    // /// assert_eq!(x, vec![10, 40, 30]);
+-    // /// ```
+-    // #[stable(feature = "rust1", since = "1.0.0")]
+-    // #[inline]
+-    // pub fn into_vec(self: Box<Self>) -> Vec<T> {
+-    //     // NB see hack module in this file
+-    //     hack::into_vec(self)
+-    // }
+-}
+-
+-#[lang = "slice_u8"]
+-#[cfg(not(test))]
+-impl [u8] {
+-    /// Checks if all bytes in this slice are within the ASCII range.
+-    #[stable(feature = "ascii_methods_on_intrinsics", since = "1.23.0")]
+-    #[inline]
+-    pub fn is_ascii(&self) -> bool {
+-        self.iter().all(|b| b.is_ascii())
+-    }
+-
+-    // /// Returns a vector containing a copy of this slice where each byte
+-    // /// is mapped to its ASCII upper case equivalent.
+-    // ///
+-    // /// ASCII letters 'a' to 'z' are mapped to 'A' to 'Z',
+-    // /// but non-ASCII letters are unchanged.
+-    // ///
+-    // /// To uppercase the value in-place, use [`make_ascii_uppercase`].
+-    // ///
+-    // /// [`make_ascii_uppercase`]: #method.make_ascii_uppercase
+-    // #[stable(feature = "ascii_methods_on_intrinsics", since = "1.23.0")]
+-    // #[inline]
+-    // pub fn to_ascii_uppercase(&self) -> Vec<u8> {
+-    //     let mut me = self.to_vec();
+-    //     me.make_ascii_uppercase();
+-    //     me
+-    // }
+-
+-    // /// Returns a vector containing a copy of this slice where each byte
+-    // /// is mapped to its ASCII lower case equivalent.
+-    // ///
+-    // /// ASCII letters 'A' to 'Z' are mapped to 'a' to 'z',
+-    // /// but non-ASCII letters are unchanged.
+-    // ///
+-    // /// To lowercase the value in-place, use [`make_ascii_lowercase`].
+-    // ///
+-    // /// [`make_ascii_lowercase`]: #method.make_ascii_lowercase
+-    // #[stable(feature = "ascii_methods_on_intrinsics", since = "1.23.0")]
+-    // #[inline]
+-    // pub fn to_ascii_lowercase(&self) -> Vec<u8> {
+-    //     let mut me = self.to_vec();
+-    //     me.make_ascii_lowercase();
+-    //     me
+-    // }
+-
+-    /// Checks that two slices are an ASCII case-insensitive match.
+-    ///
+-    /// Same as `to_ascii_lowercase(a) == to_ascii_lowercase(b)`,
+-    /// but without allocating and copying temporaries.
+-    #[stable(feature = "ascii_methods_on_intrinsics", since = "1.23.0")]
+-    #[inline]
+-    pub fn eq_ignore_ascii_case(&self, other: &[u8]) -> bool {
+-        self.len() == other.len() &&
+-            self.iter().zip(other).all(|(a, b)| {
+-                a.eq_ignore_ascii_case(b)
+-            })
+-    }
+-
+-    /// Converts this slice to its ASCII upper case equivalent in-place.
+-    ///
+-    /// ASCII letters 'a' to 'z' are mapped to 'A' to 'Z',
+-    /// but non-ASCII letters are unchanged.
+-    ///
+-    /// To return a new uppercased value without modifying the existing one, use
+-    /// [`to_ascii_uppercase`].
+-    ///
+-    /// [`to_ascii_uppercase`]: #method.to_ascii_uppercase
+-    #[stable(feature = "ascii_methods_on_intrinsics", since = "1.23.0")]
+-    #[inline]
+-    pub fn make_ascii_uppercase(&mut self) {
+-        for byte in self {
+-            byte.make_ascii_uppercase();
+-        }
+-    }
+-
+-    /// Converts this slice to its ASCII lower case equivalent in-place.
+-    ///
+-    /// ASCII letters 'A' to 'Z' are mapped to 'a' to 'z',
+-    /// but non-ASCII letters are unchanged.
+-    ///
+-    /// To return a new lowercased value without modifying the existing one, use
+-    /// [`to_ascii_lowercase`].
+-    ///
+-    /// [`to_ascii_lowercase`]: #method.to_ascii_lowercase
+-    #[stable(feature = "ascii_methods_on_intrinsics", since = "1.23.0")]
+-    #[inline]
+-    pub fn make_ascii_lowercase(&mut self) {
+-        for byte in self {
+-            byte.make_ascii_lowercase();
+-        }
+-    }
+-}
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ // Extension traits for slices over specific kinds of data
+diff -ruN orig/std/src/str.rs new/std/src/str.rs
+--- orig/std/src/str.rs	2018-07-18 23:59:41.000000000 +0800
++++ new/std/src/str.rs	2018-07-18 23:59:36.000000000 +0800
+@@ -44,12 +44,11 @@
+ use core::str::pattern::{Searcher, ReverseSearcher, DoubleEndedSearcher};
+ use core::mem;
+ use core::iter::FusedIterator;
+-use std_unicode::str::{UnicodeStr, Utf16Encoder};
+ 
+ // use vec_deque::VecDeque;
+ // use borrow::{Borrow, ToOwned};
+ // use string::String;
+-use std_unicode;
++// use std_unicode;
+ // use vec::Vec;
+ use slice::{SliceConcatExt, SliceIndex};
+ // use boxed::Box;
+@@ -75,9 +74,11 @@
+ #[stable(feature = "rust1", since = "1.0.0")]
+ pub use core::str::{from_utf8_unchecked, from_utf8_unchecked_mut, ParseBoolError};
+ #[stable(feature = "rust1", since = "1.0.0")]
+-pub use std_unicode::str::SplitWhitespace;
++pub use core::str::SplitWhitespace;
+ #[stable(feature = "rust1", since = "1.0.0")]
+ pub use core::str::pattern;
++#[stable(feature = "encode_utf16", since = "1.8.0")]
++pub use core::str::EncodeUtf16;
+ 
+ 
+ // #[unstable(feature = "slice_concat_ext",
+@@ -135,46 +136,6 @@
+ //     }
+ // }
+ 
+-/// An iterator of [`u16`] over the string encoded as UTF-16.
+-///
+-/// [`u16`]: ../../std/primitive.u16.html
+-///
+-/// This struct is created by the [`encode_utf16`] method on [`str`].
+-/// See its documentation for more.
+-///
+-/// [`encode_utf16`]: ../../std/primitive.str.html#method.encode_utf16
+-/// [`str`]: ../../std/primitive.str.html
+-#[derive(Clone)]
+-#[stable(feature = "encode_utf16", since = "1.8.0")]
+-pub struct EncodeUtf16<'a> {
+-    encoder: Utf16Encoder<Chars<'a>>,
+-}
+-
+-#[stable(feature = "collection_debug", since = "1.17.0")]
+-impl<'a> fmt::Debug for EncodeUtf16<'a> {
+-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+-        f.pad("EncodeUtf16 { .. }")
+-    }
+-}
+-
+-#[stable(feature = "encode_utf16", since = "1.8.0")]
+-impl<'a> Iterator for EncodeUtf16<'a> {
+-    type Item = u16;
+-
+-    #[inline]
+-    fn next(&mut self) -> Option<u16> {
+-        self.encoder.next()
+-    }
+-
+-    #[inline]
+-    fn size_hint(&self) -> (usize, Option<usize>) {
+-        self.encoder.size_hint()
+-    }
+-}
+-
+-#[unstable(feature = "fused", issue = "35602")]
+-impl<'a> FusedIterator for EncodeUtf16<'a> {}
+-
+ // #[stable(feature = "rust1", since = "1.0.0")]
+ // impl Borrow<str> for String {
+ //     #[inline]
+@@ -198,1606 +159,9 @@
+ // }
+ 
+ /// Methods for string slices.
+-#[lang = "str"]
++#[lang = "str_alloc"]
+ #[cfg(not(test))]
+ impl str {
+-    /// Returns the length of `self`.
+-    ///
+-    /// This length is in bytes, not [`char`]s or graphemes. In other words,
+-    /// it may not be what a human considers the length of the string.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let len = "foo".len();
+-    /// assert_eq!(3, len);
+-    ///
+-    /// let len = "ƒoo".len(); // fancy f!
+-    /// assert_eq!(4, len);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn len(&self) -> usize {
+-        core_str::StrExt::len(self)
+-    }
+-
+-    /// Returns `true` if `self` has a length of zero bytes.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let s = "";
+-    /// assert!(s.is_empty());
+-    ///
+-    /// let s = "not empty";
+-    /// assert!(!s.is_empty());
+-    /// ```
+-    #[inline]
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    pub fn is_empty(&self) -> bool {
+-        core_str::StrExt::is_empty(self)
+-    }
+-
+-    /// Checks that `index`-th byte lies at the start and/or end of a
+-    /// UTF-8 code point sequence.
+-    ///
+-    /// The start and end of the string (when `index == self.len()`) are
+-    /// considered to be
+-    /// boundaries.
+-    ///
+-    /// Returns `false` if `index` is greater than `self.len()`.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let s = "Löwe 老虎 Léopard";
+-    /// assert!(s.is_char_boundary(0));
+-    /// // start of `老`
+-    /// assert!(s.is_char_boundary(6));
+-    /// assert!(s.is_char_boundary(s.len()));
+-    ///
+-    /// // second byte of `ö`
+-    /// assert!(!s.is_char_boundary(2));
+-    ///
+-    /// // third byte of `老`
+-    /// assert!(!s.is_char_boundary(8));
+-    /// ```
+-    #[stable(feature = "is_char_boundary", since = "1.9.0")]
+-    #[inline]
+-    pub fn is_char_boundary(&self, index: usize) -> bool {
+-        core_str::StrExt::is_char_boundary(self, index)
+-    }
+-
+-    /// Converts a string slice to a byte slice. To convert the byte slice back
+-    /// into a string slice, use the [`str::from_utf8`] function.
+-    ///
+-    /// [`str::from_utf8`]: ./str/fn.from_utf8.html
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let bytes = "bors".as_bytes();
+-    /// assert_eq!(b"bors", bytes);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline(always)]
+-    pub fn as_bytes(&self) -> &[u8] {
+-        core_str::StrExt::as_bytes(self)
+-    }
+-
+-    /// Converts a mutable string slice to a mutable byte slice. To convert the
+-    /// mutable byte slice back into a mutable string slice, use the
+-    /// [`str::from_utf8_mut`] function.
+-    ///
+-    /// [`str::from_utf8_mut`]: ./str/fn.from_utf8_mut.html
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let mut s = String::from("Hello");
+-    /// let bytes = unsafe { s.as_bytes_mut() };
+-    ///
+-    /// assert_eq!(b"Hello", bytes);
+-    /// ```
+-    ///
+-    /// Mutability:
+-    ///
+-    /// ```
+-    /// let mut s = String::from("🗻∈🌏");
+-    ///
+-    /// unsafe {
+-    ///     let bytes = s.as_bytes_mut();
+-    ///
+-    ///     bytes[0] = 0xF0;
+-    ///     bytes[1] = 0x9F;
+-    ///     bytes[2] = 0x8D;
+-    ///     bytes[3] = 0x94;
+-    /// }
+-    ///
+-    /// assert_eq!("🍔∈🌏", s);
+-    /// ```
+-    #[stable(feature = "str_mut_extras", since = "1.20.0")]
+-    #[inline(always)]
+-    pub unsafe fn as_bytes_mut(&mut self) -> &mut [u8] {
+-        core_str::StrExt::as_bytes_mut(self)
+-    }
+-
+-    /// Converts a string slice to a raw pointer.
+-    ///
+-    /// As string slices are a slice of bytes, the raw pointer points to a
+-    /// [`u8`]. This pointer will be pointing to the first byte of the string
+-    /// slice.
+-    ///
+-    /// [`u8`]: primitive.u8.html
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let s = "Hello";
+-    /// let ptr = s.as_ptr();
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn as_ptr(&self) -> *const u8 {
+-        core_str::StrExt::as_ptr(self)
+-    }
+-
+-    /// Returns a subslice of `str`.
+-    ///
+-    /// This is the non-panicking alternative to indexing the `str`. Returns
+-    /// [`None`] whenever equivalent indexing operation would panic.
+-    ///
+-    /// [`None`]: option/enum.Option.html#variant.None
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let v = String::from("🗻∈🌏");
+-    ///
+-    /// assert_eq!(Some("🗻"), v.get(0..4));
+-    ///
+-    /// // indices not on UTF-8 sequence boundaries
+-    /// assert!(v.get(1..).is_none());
+-    /// assert!(v.get(..8).is_none());
+-    ///
+-    /// // out of bounds
+-    /// assert!(v.get(..42).is_none());
+-    /// ```
+-    #[stable(feature = "str_checked_slicing", since = "1.20.0")]
+-    #[inline]
+-    pub fn get<I: SliceIndex<str>>(&self, i: I) -> Option<&I::Output> {
+-        core_str::StrExt::get(self, i)
+-    }
+-
+-    /// Returns a mutable subslice of `str`.
+-    ///
+-    /// This is the non-panicking alternative to indexing the `str`. Returns
+-    /// [`None`] whenever equivalent indexing operation would panic.
+-    ///
+-    /// [`None`]: option/enum.Option.html#variant.None
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let mut v = String::from("hello");
+-    /// // correct length
+-    /// assert!(v.get_mut(0..5).is_some());
+-    /// // out of bounds
+-    /// assert!(v.get_mut(..42).is_none());
+-    /// assert_eq!(Some("he"), v.get_mut(0..2).map(|v| &*v));
+-    ///
+-    /// assert_eq!("hello", v);
+-    /// {
+-    ///     let s = v.get_mut(0..2);
+-    ///     let s = s.map(|s| {
+-    ///         s.make_ascii_uppercase();
+-    ///         &*s
+-    ///     });
+-    ///     assert_eq!(Some("HE"), s);
+-    /// }
+-    /// assert_eq!("HEllo", v);
+-    /// ```
+-    #[stable(feature = "str_checked_slicing", since = "1.20.0")]
+-    #[inline]
+-    pub fn get_mut<I: SliceIndex<str>>(&mut self, i: I) -> Option<&mut I::Output> {
+-        core_str::StrExt::get_mut(self, i)
+-    }
+-
+-    /// Returns a unchecked subslice of `str`.
+-    ///
+-    /// This is the unchecked alternative to indexing the `str`.
+-    ///
+-    /// # Safety
+-    ///
+-    /// Callers of this function are responsible that these preconditions are
+-    /// satisfied:
+-    ///
+-    /// * The starting index must come before the ending index;
+-    /// * Indexes must be within bounds of the original slice;
+-    /// * Indexes must lie on UTF-8 sequence boundaries.
+-    ///
+-    /// Failing that, the returned string slice may reference invalid memory or
+-    /// violate the invariants communicated by the `str` type.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let v = "🗻∈🌏";
+-    /// unsafe {
+-    ///     assert_eq!("🗻", v.get_unchecked(0..4));
+-    ///     assert_eq!("∈", v.get_unchecked(4..7));
+-    ///     assert_eq!("🌏", v.get_unchecked(7..11));
+-    /// }
+-    /// ```
+-    #[stable(feature = "str_checked_slicing", since = "1.20.0")]
+-    #[inline]
+-    pub unsafe fn get_unchecked<I: SliceIndex<str>>(&self, i: I) -> &I::Output {
+-        core_str::StrExt::get_unchecked(self, i)
+-    }
+-
+-    /// Returns a mutable, unchecked subslice of `str`.
+-    ///
+-    /// This is the unchecked alternative to indexing the `str`.
+-    ///
+-    /// # Safety
+-    ///
+-    /// Callers of this function are responsible that these preconditions are
+-    /// satisfied:
+-    ///
+-    /// * The starting index must come before the ending index;
+-    /// * Indexes must be within bounds of the original slice;
+-    /// * Indexes must lie on UTF-8 sequence boundaries.
+-    ///
+-    /// Failing that, the returned string slice may reference invalid memory or
+-    /// violate the invariants communicated by the `str` type.
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let mut v = String::from("🗻∈🌏");
+-    /// unsafe {
+-    ///     assert_eq!("🗻", v.get_unchecked_mut(0..4));
+-    ///     assert_eq!("∈", v.get_unchecked_mut(4..7));
+-    ///     assert_eq!("🌏", v.get_unchecked_mut(7..11));
+-    /// }
+-    /// ```
+-    #[stable(feature = "str_checked_slicing", since = "1.20.0")]
+-    #[inline]
+-    pub unsafe fn get_unchecked_mut<I: SliceIndex<str>>(&mut self, i: I) -> &mut I::Output {
+-        core_str::StrExt::get_unchecked_mut(self, i)
+-    }
+-
+-    /// Creates a string slice from another string slice, bypassing safety
+-    /// checks.
+-    ///
+-    /// This is generally not recommended, use with caution! For a safe
+-    /// alternative see [`str`] and [`Index`].
+-    ///
+-    /// [`str`]: primitive.str.html
+-    /// [`Index`]: ops/trait.Index.html
+-    ///
+-    /// This new slice goes from `begin` to `end`, including `begin` but
+-    /// excluding `end`.
+-    ///
+-    /// To get a mutable string slice instead, see the
+-    /// [`slice_mut_unchecked`] method.
+-    ///
+-    /// [`slice_mut_unchecked`]: #method.slice_mut_unchecked
+-    ///
+-    /// # Safety
+-    ///
+-    /// Callers of this function are responsible that three preconditions are
+-    /// satisfied:
+-    ///
+-    /// * `begin` must come before `end`.
+-    /// * `begin` and `end` must be byte positions within the string slice.
+-    /// * `begin` and `end` must lie on UTF-8 sequence boundaries.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let s = "Löwe 老虎 Léopard";
+-    ///
+-    /// unsafe {
+-    ///     assert_eq!("Löwe 老虎 Léopard", s.slice_unchecked(0, 21));
+-    /// }
+-    ///
+-    /// let s = "Hello, world!";
+-    ///
+-    /// unsafe {
+-    ///     assert_eq!("world", s.slice_unchecked(7, 12));
+-    /// }
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub unsafe fn slice_unchecked(&self, begin: usize, end: usize) -> &str {
+-        core_str::StrExt::slice_unchecked(self, begin, end)
+-    }
+-
+-    /// Creates a string slice from another string slice, bypassing safety
+-    /// checks.
+-    /// This is generally not recommended, use with caution! For a safe
+-    /// alternative see [`str`] and [`IndexMut`].
+-    ///
+-    /// [`str`]: primitive.str.html
+-    /// [`IndexMut`]: ops/trait.IndexMut.html
+-    ///
+-    /// This new slice goes from `begin` to `end`, including `begin` but
+-    /// excluding `end`.
+-    ///
+-    /// To get an immutable string slice instead, see the
+-    /// [`slice_unchecked`] method.
+-    ///
+-    /// [`slice_unchecked`]: #method.slice_unchecked
+-    ///
+-    /// # Safety
+-    ///
+-    /// Callers of this function are responsible that three preconditions are
+-    /// satisfied:
+-    ///
+-    /// * `begin` must come before `end`.
+-    /// * `begin` and `end` must be byte positions within the string slice.
+-    /// * `begin` and `end` must lie on UTF-8 sequence boundaries.
+-    #[stable(feature = "str_slice_mut", since = "1.5.0")]
+-    #[inline]
+-    pub unsafe fn slice_mut_unchecked(&mut self, begin: usize, end: usize) -> &mut str {
+-        core_str::StrExt::slice_mut_unchecked(self, begin, end)
+-    }
+-
+-    /// Divide one string slice into two at an index.
+-    ///
+-    /// The argument, `mid`, should be a byte offset from the start of the
+-    /// string. It must also be on the boundary of a UTF-8 code point.
+-    ///
+-    /// The two slices returned go from the start of the string slice to `mid`,
+-    /// and from `mid` to the end of the string slice.
+-    ///
+-    /// To get mutable string slices instead, see the [`split_at_mut`]
+-    /// method.
+-    ///
+-    /// [`split_at_mut`]: #method.split_at_mut
+-    ///
+-    /// # Panics
+-    ///
+-    /// Panics if `mid` is not on a UTF-8 code point boundary, or if it is
+-    /// beyond the last code point of the string slice.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let s = "Per Martin-Löf";
+-    ///
+-    /// let (first, last) = s.split_at(3);
+-    ///
+-    /// assert_eq!("Per", first);
+-    /// assert_eq!(" Martin-Löf", last);
+-    /// ```
+-    #[inline]
+-    #[stable(feature = "str_split_at", since = "1.4.0")]
+-    pub fn split_at(&self, mid: usize) -> (&str, &str) {
+-        core_str::StrExt::split_at(self, mid)
+-    }
+-
+-    /// Divide one mutable string slice into two at an index.
+-    ///
+-    /// The argument, `mid`, should be a byte offset from the start of the
+-    /// string. It must also be on the boundary of a UTF-8 code point.
+-    ///
+-    /// The two slices returned go from the start of the string slice to `mid`,
+-    /// and from `mid` to the end of the string slice.
+-    ///
+-    /// To get immutable string slices instead, see the [`split_at`] method.
+-    ///
+-    /// [`split_at`]: #method.split_at
+-    ///
+-    /// # Panics
+-    ///
+-    /// Panics if `mid` is not on a UTF-8 code point boundary, or if it is
+-    /// beyond the last code point of the string slice.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let mut s = "Per Martin-Löf".to_string();
+-    /// {
+-    ///     let (first, last) = s.split_at_mut(3);
+-    ///     first.make_ascii_uppercase();
+-    ///     assert_eq!("PER", first);
+-    ///     assert_eq!(" Martin-Löf", last);
+-    /// }
+-    /// assert_eq!("PER Martin-Löf", s);
+-    /// ```
+-    #[inline]
+-    #[stable(feature = "str_split_at", since = "1.4.0")]
+-    pub fn split_at_mut(&mut self, mid: usize) -> (&mut str, &mut str) {
+-        core_str::StrExt::split_at_mut(self, mid)
+-    }
+-
+-    /// Returns an iterator over the [`char`]s of a string slice.
+-    ///
+-    /// As a string slice consists of valid UTF-8, we can iterate through a
+-    /// string slice by [`char`]. This method returns such an iterator.
+-    ///
+-    /// It's important to remember that [`char`] represents a Unicode Scalar
+-    /// Value, and may not match your idea of what a 'character' is. Iteration
+-    /// over grapheme clusters may be what you actually want.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let word = "goodbye";
+-    ///
+-    /// let count = word.chars().count();
+-    /// assert_eq!(7, count);
+-    ///
+-    /// let mut chars = word.chars();
+-    ///
+-    /// assert_eq!(Some('g'), chars.next());
+-    /// assert_eq!(Some('o'), chars.next());
+-    /// assert_eq!(Some('o'), chars.next());
+-    /// assert_eq!(Some('d'), chars.next());
+-    /// assert_eq!(Some('b'), chars.next());
+-    /// assert_eq!(Some('y'), chars.next());
+-    /// assert_eq!(Some('e'), chars.next());
+-    ///
+-    /// assert_eq!(None, chars.next());
+-    /// ```
+-    ///
+-    /// Remember, [`char`]s may not match your human intuition about characters:
+-    ///
+-    /// ```
+-    /// let y = "y̆";
+-    ///
+-    /// let mut chars = y.chars();
+-    ///
+-    /// assert_eq!(Some('y'), chars.next()); // not 'y̆'
+-    /// assert_eq!(Some('\u{0306}'), chars.next());
+-    ///
+-    /// assert_eq!(None, chars.next());
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn chars(&self) -> Chars {
+-        core_str::StrExt::chars(self)
+-    }
+-    /// Returns an iterator over the [`char`]s of a string slice, and their
+-    /// positions.
+-    ///
+-    /// As a string slice consists of valid UTF-8, we can iterate through a
+-    /// string slice by [`char`]. This method returns an iterator of both
+-    /// these [`char`]s, as well as their byte positions.
+-    ///
+-    /// The iterator yields tuples. The position is first, the [`char`] is
+-    /// second.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let word = "goodbye";
+-    ///
+-    /// let count = word.char_indices().count();
+-    /// assert_eq!(7, count);
+-    ///
+-    /// let mut char_indices = word.char_indices();
+-    ///
+-    /// assert_eq!(Some((0, 'g')), char_indices.next());
+-    /// assert_eq!(Some((1, 'o')), char_indices.next());
+-    /// assert_eq!(Some((2, 'o')), char_indices.next());
+-    /// assert_eq!(Some((3, 'd')), char_indices.next());
+-    /// assert_eq!(Some((4, 'b')), char_indices.next());
+-    /// assert_eq!(Some((5, 'y')), char_indices.next());
+-    /// assert_eq!(Some((6, 'e')), char_indices.next());
+-    ///
+-    /// assert_eq!(None, char_indices.next());
+-    /// ```
+-    ///
+-    /// Remember, [`char`]s may not match your human intuition about characters:
+-    ///
+-    /// ```
+-    /// let yes = "y̆es";
+-    ///
+-    /// let mut char_indices = yes.char_indices();
+-    ///
+-    /// assert_eq!(Some((0, 'y')), char_indices.next()); // not (0, 'y̆')
+-    /// assert_eq!(Some((1, '\u{0306}')), char_indices.next());
+-    ///
+-    /// // note the 3 here - the last character took up two bytes
+-    /// assert_eq!(Some((3, 'e')), char_indices.next());
+-    /// assert_eq!(Some((4, 's')), char_indices.next());
+-    ///
+-    /// assert_eq!(None, char_indices.next());
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn char_indices(&self) -> CharIndices {
+-        core_str::StrExt::char_indices(self)
+-    }
+-
+-    /// An iterator over the bytes of a string slice.
+-    ///
+-    /// As a string slice consists of a sequence of bytes, we can iterate
+-    /// through a string slice by byte. This method returns such an iterator.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let mut bytes = "bors".bytes();
+-    ///
+-    /// assert_eq!(Some(b'b'), bytes.next());
+-    /// assert_eq!(Some(b'o'), bytes.next());
+-    /// assert_eq!(Some(b'r'), bytes.next());
+-    /// assert_eq!(Some(b's'), bytes.next());
+-    ///
+-    /// assert_eq!(None, bytes.next());
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn bytes(&self) -> Bytes {
+-        core_str::StrExt::bytes(self)
+-    }
+-
+-    /// Split a string slice by whitespace.
+-    ///
+-    /// The iterator returned will return string slices that are sub-slices of
+-    /// the original string slice, separated by any amount of whitespace.
+-    ///
+-    /// 'Whitespace' is defined according to the terms of the Unicode Derived
+-    /// Core Property `White_Space`.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let mut iter = "A few words".split_whitespace();
+-    ///
+-    /// assert_eq!(Some("A"), iter.next());
+-    /// assert_eq!(Some("few"), iter.next());
+-    /// assert_eq!(Some("words"), iter.next());
+-    ///
+-    /// assert_eq!(None, iter.next());
+-    /// ```
+-    ///
+-    /// All kinds of whitespace are considered:
+-    ///
+-    /// ```
+-    /// let mut iter = " Mary   had\ta\u{2009}little  \n\t lamb".split_whitespace();
+-    /// assert_eq!(Some("Mary"), iter.next());
+-    /// assert_eq!(Some("had"), iter.next());
+-    /// assert_eq!(Some("a"), iter.next());
+-    /// assert_eq!(Some("little"), iter.next());
+-    /// assert_eq!(Some("lamb"), iter.next());
+-    ///
+-    /// assert_eq!(None, iter.next());
+-    /// ```
+-    #[stable(feature = "split_whitespace", since = "1.1.0")]
+-    #[inline]
+-    pub fn split_whitespace(&self) -> SplitWhitespace {
+-        UnicodeStr::split_whitespace(self)
+-    }
+-
+-    /// An iterator over the lines of a string, as string slices.
+-    ///
+-    /// Lines are ended with either a newline (`\n`) or a carriage return with
+-    /// a line feed (`\r\n`).
+-    ///
+-    /// The final line ending is optional.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let text = "foo\r\nbar\n\nbaz\n";
+-    /// let mut lines = text.lines();
+-    ///
+-    /// assert_eq!(Some("foo"), lines.next());
+-    /// assert_eq!(Some("bar"), lines.next());
+-    /// assert_eq!(Some(""), lines.next());
+-    /// assert_eq!(Some("baz"), lines.next());
+-    ///
+-    /// assert_eq!(None, lines.next());
+-    /// ```
+-    ///
+-    /// The final line ending isn't required:
+-    ///
+-    /// ```
+-    /// let text = "foo\nbar\n\r\nbaz";
+-    /// let mut lines = text.lines();
+-    ///
+-    /// assert_eq!(Some("foo"), lines.next());
+-    /// assert_eq!(Some("bar"), lines.next());
+-    /// assert_eq!(Some(""), lines.next());
+-    /// assert_eq!(Some("baz"), lines.next());
+-    ///
+-    /// assert_eq!(None, lines.next());
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn lines(&self) -> Lines {
+-        core_str::StrExt::lines(self)
+-    }
+-
+-    /// An iterator over the lines of a string.
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[rustc_deprecated(since = "1.4.0", reason = "use lines() instead now")]
+-    #[inline]
+-    #[allow(deprecated)]
+-    pub fn lines_any(&self) -> LinesAny {
+-        core_str::StrExt::lines_any(self)
+-    }
+-
+-    /// Returns an iterator of `u16` over the string encoded as UTF-16.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let text = "Zażółć gęślą jaźń";
+-    ///
+-    /// let utf8_len = text.len();
+-    /// let utf16_len = text.encode_utf16().count();
+-    ///
+-    /// assert!(utf16_len <= utf8_len);
+-    /// ```
+-    #[stable(feature = "encode_utf16", since = "1.8.0")]
+-    pub fn encode_utf16(&self) -> EncodeUtf16 {
+-        EncodeUtf16 { encoder: Utf16Encoder::new(self[..].chars()) }
+-    }
+-
+-    /// Returns `true` if the given pattern matches a sub-slice of
+-    /// this string slice.
+-    ///
+-    /// Returns `false` if it does not.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let bananas = "bananas";
+-    ///
+-    /// assert!(bananas.contains("nana"));
+-    /// assert!(!bananas.contains("apples"));
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn contains<'a, P: Pattern<'a>>(&'a self, pat: P) -> bool {
+-        core_str::StrExt::contains(self, pat)
+-    }
+-
+-    /// Returns `true` if the given pattern matches a prefix of this
+-    /// string slice.
+-    ///
+-    /// Returns `false` if it does not.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let bananas = "bananas";
+-    ///
+-    /// assert!(bananas.starts_with("bana"));
+-    /// assert!(!bananas.starts_with("nana"));
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    pub fn starts_with<'a, P: Pattern<'a>>(&'a self, pat: P) -> bool {
+-        core_str::StrExt::starts_with(self, pat)
+-    }
+-
+-    /// Returns `true` if the given pattern matches a suffix of this
+-    /// string slice.
+-    ///
+-    /// Returns `false` if it does not.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let bananas = "bananas";
+-    ///
+-    /// assert!(bananas.ends_with("anas"));
+-    /// assert!(!bananas.ends_with("nana"));
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    pub fn ends_with<'a, P: Pattern<'a>>(&'a self, pat: P) -> bool
+-        where P::Searcher: ReverseSearcher<'a>
+-    {
+-        core_str::StrExt::ends_with(self, pat)
+-    }
+-
+-    /// Returns the byte index of the first character of this string slice that
+-    /// matches the pattern.
+-    ///
+-    /// Returns [`None`] if the pattern doesn't match.
+-    ///
+-    /// The pattern can be a `&str`, [`char`], or a closure that determines if
+-    /// a character matches.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    /// [`None`]: option/enum.Option.html#variant.None
+-    ///
+-    /// # Examples
+-    ///
+-    /// Simple patterns:
+-    ///
+-    /// ```
+-    /// let s = "Löwe 老虎 Léopard";
+-    ///
+-    /// assert_eq!(s.find('L'), Some(0));
+-    /// assert_eq!(s.find('é'), Some(14));
+-    /// assert_eq!(s.find("Léopard"), Some(13));
+-    /// ```
+-    ///
+-    /// More complex patterns using point-free style and closures:
+-    ///
+-    /// ```
+-    /// let s = "Löwe 老虎 Léopard";
+-    ///
+-    /// assert_eq!(s.find(char::is_whitespace), Some(5));
+-    /// assert_eq!(s.find(char::is_lowercase), Some(1));
+-    /// assert_eq!(s.find(|c: char| c.is_whitespace() || c.is_lowercase()), Some(1));
+-    /// assert_eq!(s.find(|c: char| (c < 'o') && (c > 'a')), Some(4));
+-    /// ```
+-    ///
+-    /// Not finding the pattern:
+-    ///
+-    /// ```
+-    /// let s = "Löwe 老虎 Léopard";
+-    /// let x: &[_] = &['1', '2'];
+-    ///
+-    /// assert_eq!(s.find(x), None);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn find<'a, P: Pattern<'a>>(&'a self, pat: P) -> Option<usize> {
+-        core_str::StrExt::find(self, pat)
+-    }
+-
+-    /// Returns the byte index of the last character of this string slice that
+-    /// matches the pattern.
+-    ///
+-    /// Returns [`None`] if the pattern doesn't match.
+-    ///
+-    /// The pattern can be a `&str`, [`char`], or a closure that determines if
+-    /// a character matches.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    /// [`None`]: option/enum.Option.html#variant.None
+-    ///
+-    /// # Examples
+-    ///
+-    /// Simple patterns:
+-    ///
+-    /// ```
+-    /// let s = "Löwe 老虎 Léopard";
+-    ///
+-    /// assert_eq!(s.rfind('L'), Some(13));
+-    /// assert_eq!(s.rfind('é'), Some(14));
+-    /// ```
+-    ///
+-    /// More complex patterns with closures:
+-    ///
+-    /// ```
+-    /// let s = "Löwe 老虎 Léopard";
+-    ///
+-    /// assert_eq!(s.rfind(char::is_whitespace), Some(12));
+-    /// assert_eq!(s.rfind(char::is_lowercase), Some(20));
+-    /// ```
+-    ///
+-    /// Not finding the pattern:
+-    ///
+-    /// ```
+-    /// let s = "Löwe 老虎 Léopard";
+-    /// let x: &[_] = &['1', '2'];
+-    ///
+-    /// assert_eq!(s.rfind(x), None);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn rfind<'a, P: Pattern<'a>>(&'a self, pat: P) -> Option<usize>
+-        where P::Searcher: ReverseSearcher<'a>
+-    {
+-        core_str::StrExt::rfind(self, pat)
+-    }
+-
+-    /// An iterator over substrings of this string slice, separated by
+-    /// characters matched by a pattern.
+-    ///
+-    /// The pattern can be a `&str`, [`char`], or a closure that determines the
+-    /// split.
+-    ///
+-    /// # Iterator behavior
+-    ///
+-    /// The returned iterator will be a [`DoubleEndedIterator`] if the pattern
+-    /// allows a reverse search and forward/reverse search yields the same
+-    /// elements. This is true for, eg, [`char`] but not for `&str`.
+-    ///
+-    /// [`DoubleEndedIterator`]: iter/trait.DoubleEndedIterator.html
+-    ///
+-    /// If the pattern allows a reverse search but its results might differ
+-    /// from a forward search, the [`rsplit`] method can be used.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    /// [`rsplit`]: #method.rsplit
+-    ///
+-    /// # Examples
+-    ///
+-    /// Simple patterns:
+-    ///
+-    /// ```
+-    /// let v: Vec<&str> = "Mary had a little lamb".split(' ').collect();
+-    /// assert_eq!(v, ["Mary", "had", "a", "little", "lamb"]);
+-    ///
+-    /// let v: Vec<&str> = "".split('X').collect();
+-    /// assert_eq!(v, [""]);
+-    ///
+-    /// let v: Vec<&str> = "lionXXtigerXleopard".split('X').collect();
+-    /// assert_eq!(v, ["lion", "", "tiger", "leopard"]);
+-    ///
+-    /// let v: Vec<&str> = "lion::tiger::leopard".split("::").collect();
+-    /// assert_eq!(v, ["lion", "tiger", "leopard"]);
+-    ///
+-    /// let v: Vec<&str> = "abc1def2ghi".split(char::is_numeric).collect();
+-    /// assert_eq!(v, ["abc", "def", "ghi"]);
+-    ///
+-    /// let v: Vec<&str> = "lionXtigerXleopard".split(char::is_uppercase).collect();
+-    /// assert_eq!(v, ["lion", "tiger", "leopard"]);
+-    /// ```
+-    ///
+-    /// A more complex pattern, using a closure:
+-    ///
+-    /// ```
+-    /// let v: Vec<&str> = "abc1defXghi".split(|c| c == '1' || c == 'X').collect();
+-    /// assert_eq!(v, ["abc", "def", "ghi"]);
+-    /// ```
+-    ///
+-    /// If a string contains multiple contiguous separators, you will end up
+-    /// with empty strings in the output:
+-    ///
+-    /// ```
+-    /// let x = "||||a||b|c".to_string();
+-    /// let d: Vec<_> = x.split('|').collect();
+-    ///
+-    /// assert_eq!(d, &["", "", "", "", "a", "", "b", "c"]);
+-    /// ```
+-    ///
+-    /// Contiguous separators are separated by the empty string.
+-    ///
+-    /// ```
+-    /// let x = "(///)".to_string();
+-    /// let d: Vec<_> = x.split('/').collect();
+-    ///
+-    /// assert_eq!(d, &["(", "", "", ")"]);
+-    /// ```
+-    ///
+-    /// Separators at the start or end of a string are neighbored
+-    /// by empty strings.
+-    ///
+-    /// ```
+-    /// let d: Vec<_> = "010".split("0").collect();
+-    /// assert_eq!(d, &["", "1", ""]);
+-    /// ```
+-    ///
+-    /// When the empty string is used as a separator, it separates
+-    /// every character in the string, along with the beginning
+-    /// and end of the string.
+-    ///
+-    /// ```
+-    /// let f: Vec<_> = "rust".split("").collect();
+-    /// assert_eq!(f, &["", "r", "u", "s", "t", ""]);
+-    /// ```
+-    ///
+-    /// Contiguous separators can lead to possibly surprising behavior
+-    /// when whitespace is used as the separator. This code is correct:
+-    ///
+-    /// ```
+-    /// let x = "    a  b c".to_string();
+-    /// let d: Vec<_> = x.split(' ').collect();
+-    ///
+-    /// assert_eq!(d, &["", "", "", "", "a", "", "b", "c"]);
+-    /// ```
+-    ///
+-    /// It does _not_ give you:
+-    ///
+-    /// ```,ignore
+-    /// assert_eq!(d, &["a", "b", "c"]);
+-    /// ```
+-    ///
+-    /// Use [`split_whitespace`] for this behavior.
+-    ///
+-    /// [`split_whitespace`]: #method.split_whitespace
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn split<'a, P: Pattern<'a>>(&'a self, pat: P) -> Split<'a, P> {
+-        core_str::StrExt::split(self, pat)
+-    }
+-
+-    /// An iterator over substrings of the given string slice, separated by
+-    /// characters matched by a pattern and yielded in reverse order.
+-    ///
+-    /// The pattern can be a `&str`, [`char`], or a closure that determines the
+-    /// split.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// # Iterator behavior
+-    ///
+-    /// The returned iterator requires that the pattern supports a reverse
+-    /// search, and it will be a [`DoubleEndedIterator`] if a forward/reverse
+-    /// search yields the same elements.
+-    ///
+-    /// [`DoubleEndedIterator`]: iter/trait.DoubleEndedIterator.html
+-    ///
+-    /// For iterating from the front, the [`split`] method can be used.
+-    ///
+-    /// [`split`]: #method.split
+-    ///
+-    /// # Examples
+-    ///
+-    /// Simple patterns:
+-    ///
+-    /// ```
+-    /// let v: Vec<&str> = "Mary had a little lamb".rsplit(' ').collect();
+-    /// assert_eq!(v, ["lamb", "little", "a", "had", "Mary"]);
+-    ///
+-    /// let v: Vec<&str> = "".rsplit('X').collect();
+-    /// assert_eq!(v, [""]);
+-    ///
+-    /// let v: Vec<&str> = "lionXXtigerXleopard".rsplit('X').collect();
+-    /// assert_eq!(v, ["leopard", "tiger", "", "lion"]);
+-    ///
+-    /// let v: Vec<&str> = "lion::tiger::leopard".rsplit("::").collect();
+-    /// assert_eq!(v, ["leopard", "tiger", "lion"]);
+-    /// ```
+-    ///
+-    /// A more complex pattern, using a closure:
+-    ///
+-    /// ```
+-    /// let v: Vec<&str> = "abc1defXghi".rsplit(|c| c == '1' || c == 'X').collect();
+-    /// assert_eq!(v, ["ghi", "def", "abc"]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn rsplit<'a, P: Pattern<'a>>(&'a self, pat: P) -> RSplit<'a, P>
+-        where P::Searcher: ReverseSearcher<'a>
+-    {
+-        core_str::StrExt::rsplit(self, pat)
+-    }
+-
+-    /// An iterator over substrings of the given string slice, separated by
+-    /// characters matched by a pattern.
+-    ///
+-    /// The pattern can be a `&str`, [`char`], or a closure that determines the
+-    /// split.
+-    ///
+-    /// Equivalent to [`split`], except that the trailing substring
+-    /// is skipped if empty.
+-    ///
+-    /// [`split`]: #method.split
+-    ///
+-    /// This method can be used for string data that is _terminated_,
+-    /// rather than _separated_ by a pattern.
+-    ///
+-    /// # Iterator behavior
+-    ///
+-    /// The returned iterator will be a [`DoubleEndedIterator`] if the pattern
+-    /// allows a reverse search and forward/reverse search yields the same
+-    /// elements. This is true for, eg, [`char`] but not for `&str`.
+-    ///
+-    /// [`DoubleEndedIterator`]: iter/trait.DoubleEndedIterator.html
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// If the pattern allows a reverse search but its results might differ
+-    /// from a forward search, the [`rsplit_terminator`] method can be used.
+-    ///
+-    /// [`rsplit_terminator`]: #method.rsplit_terminator
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let v: Vec<&str> = "A.B.".split_terminator('.').collect();
+-    /// assert_eq!(v, ["A", "B"]);
+-    ///
+-    /// let v: Vec<&str> = "A..B..".split_terminator(".").collect();
+-    /// assert_eq!(v, ["A", "", "B", ""]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn split_terminator<'a, P: Pattern<'a>>(&'a self, pat: P) -> SplitTerminator<'a, P> {
+-        core_str::StrExt::split_terminator(self, pat)
+-    }
+-
+-    /// An iterator over substrings of `self`, separated by characters
+-    /// matched by a pattern and yielded in reverse order.
+-    ///
+-    /// The pattern can be a simple `&str`, [`char`], or a closure that
+-    /// determines the split.
+-    /// Additional libraries might provide more complex patterns like
+-    /// regular expressions.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// Equivalent to [`split`], except that the trailing substring is
+-    /// skipped if empty.
+-    ///
+-    /// [`split`]: #method.split
+-    ///
+-    /// This method can be used for string data that is _terminated_,
+-    /// rather than _separated_ by a pattern.
+-    ///
+-    /// # Iterator behavior
+-    ///
+-    /// The returned iterator requires that the pattern supports a
+-    /// reverse search, and it will be double ended if a forward/reverse
+-    /// search yields the same elements.
+-    ///
+-    /// For iterating from the front, the [`split_terminator`] method can be
+-    /// used.
+-    ///
+-    /// [`split_terminator`]: #method.split_terminator
+-    ///
+-    /// # Examples
+-    ///
+-    /// ```
+-    /// let v: Vec<&str> = "A.B.".rsplit_terminator('.').collect();
+-    /// assert_eq!(v, ["B", "A"]);
+-    ///
+-    /// let v: Vec<&str> = "A..B..".rsplit_terminator(".").collect();
+-    /// assert_eq!(v, ["", "B", "", "A"]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn rsplit_terminator<'a, P: Pattern<'a>>(&'a self, pat: P) -> RSplitTerminator<'a, P>
+-        where P::Searcher: ReverseSearcher<'a>
+-    {
+-        core_str::StrExt::rsplit_terminator(self, pat)
+-    }
+-
+-    /// An iterator over substrings of the given string slice, separated by a
+-    /// pattern, restricted to returning at most `n` items.
+-    ///
+-    /// If `n` substrings are returned, the last substring (the `n`th substring)
+-    /// will contain the remainder of the string.
+-    ///
+-    /// The pattern can be a `&str`, [`char`], or a closure that determines the
+-    /// split.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// # Iterator behavior
+-    ///
+-    /// The returned iterator will not be double ended, because it is
+-    /// not efficient to support.
+-    ///
+-    /// If the pattern allows a reverse search, the [`rsplitn`] method can be
+-    /// used.
+-    ///
+-    /// [`rsplitn`]: #method.rsplitn
+-    ///
+-    /// # Examples
+-    ///
+-    /// Simple patterns:
+-    ///
+-    /// ```
+-    /// let v: Vec<&str> = "Mary had a little lambda".splitn(3, ' ').collect();
+-    /// assert_eq!(v, ["Mary", "had", "a little lambda"]);
+-    ///
+-    /// let v: Vec<&str> = "lionXXtigerXleopard".splitn(3, "X").collect();
+-    /// assert_eq!(v, ["lion", "", "tigerXleopard"]);
+-    ///
+-    /// let v: Vec<&str> = "abcXdef".splitn(1, 'X').collect();
+-    /// assert_eq!(v, ["abcXdef"]);
+-    ///
+-    /// let v: Vec<&str> = "".splitn(1, 'X').collect();
+-    /// assert_eq!(v, [""]);
+-    /// ```
+-    ///
+-    /// A more complex pattern, using a closure:
+-    ///
+-    /// ```
+-    /// let v: Vec<&str> = "abc1defXghi".splitn(2, |c| c == '1' || c == 'X').collect();
+-    /// assert_eq!(v, ["abc", "defXghi"]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn splitn<'a, P: Pattern<'a>>(&'a self, n: usize, pat: P) -> SplitN<'a, P> {
+-        core_str::StrExt::splitn(self, n, pat)
+-    }
+-
+-    /// An iterator over substrings of this string slice, separated by a
+-    /// pattern, starting from the end of the string, restricted to returning
+-    /// at most `n` items.
+-    ///
+-    /// If `n` substrings are returned, the last substring (the `n`th substring)
+-    /// will contain the remainder of the string.
+-    ///
+-    /// The pattern can be a `&str`, [`char`], or a closure that
+-    /// determines the split.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// # Iterator behavior
+-    ///
+-    /// The returned iterator will not be double ended, because it is not
+-    /// efficient to support.
+-    ///
+-    /// For splitting from the front, the [`splitn`] method can be used.
+-    ///
+-    /// [`splitn`]: #method.splitn
+-    ///
+-    /// # Examples
+-    ///
+-    /// Simple patterns:
+-    ///
+-    /// ```
+-    /// let v: Vec<&str> = "Mary had a little lamb".rsplitn(3, ' ').collect();
+-    /// assert_eq!(v, ["lamb", "little", "Mary had a"]);
+-    ///
+-    /// let v: Vec<&str> = "lionXXtigerXleopard".rsplitn(3, 'X').collect();
+-    /// assert_eq!(v, ["leopard", "tiger", "lionX"]);
+-    ///
+-    /// let v: Vec<&str> = "lion::tiger::leopard".rsplitn(2, "::").collect();
+-    /// assert_eq!(v, ["leopard", "lion::tiger"]);
+-    /// ```
+-    ///
+-    /// A more complex pattern, using a closure:
+-    ///
+-    /// ```
+-    /// let v: Vec<&str> = "abc1defXghi".rsplitn(2, |c| c == '1' || c == 'X').collect();
+-    /// assert_eq!(v, ["ghi", "abc1def"]);
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    #[inline]
+-    pub fn rsplitn<'a, P: Pattern<'a>>(&'a self, n: usize, pat: P) -> RSplitN<'a, P>
+-        where P::Searcher: ReverseSearcher<'a>
+-    {
+-        core_str::StrExt::rsplitn(self, n, pat)
+-    }
+-
+-    /// An iterator over the disjoint matches of a pattern within the given string
+-    /// slice.
+-    ///
+-    /// The pattern can be a `&str`, [`char`], or a closure that
+-    /// determines if a character matches.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// # Iterator behavior
+-    ///
+-    /// The returned iterator will be a [`DoubleEndedIterator`] if the pattern
+-    /// allows a reverse search and forward/reverse search yields the same
+-    /// elements. This is true for, eg, [`char`] but not for `&str`.
+-    ///
+-    /// [`DoubleEndedIterator`]: iter/trait.DoubleEndedIterator.html
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// If the pattern allows a reverse search but its results might differ
+-    /// from a forward search, the [`rmatches`] method can be used.
+-    ///
+-    /// [`rmatches`]: #method.rmatches
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let v: Vec<&str> = "abcXXXabcYYYabc".matches("abc").collect();
+-    /// assert_eq!(v, ["abc", "abc", "abc"]);
+-    ///
+-    /// let v: Vec<&str> = "1abc2abc3".matches(char::is_numeric).collect();
+-    /// assert_eq!(v, ["1", "2", "3"]);
+-    /// ```
+-    #[stable(feature = "str_matches", since = "1.2.0")]
+-    #[inline]
+-    pub fn matches<'a, P: Pattern<'a>>(&'a self, pat: P) -> Matches<'a, P> {
+-        core_str::StrExt::matches(self, pat)
+-    }
+-
+-    /// An iterator over the disjoint matches of a pattern within this string slice,
+-    /// yielded in reverse order.
+-    ///
+-    /// The pattern can be a `&str`, [`char`], or a closure that determines if
+-    /// a character matches.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// # Iterator behavior
+-    ///
+-    /// The returned iterator requires that the pattern supports a reverse
+-    /// search, and it will be a [`DoubleEndedIterator`] if a forward/reverse
+-    /// search yields the same elements.
+-    ///
+-    /// [`DoubleEndedIterator`]: iter/trait.DoubleEndedIterator.html
+-    ///
+-    /// For iterating from the front, the [`matches`] method can be used.
+-    ///
+-    /// [`matches`]: #method.matches
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let v: Vec<&str> = "abcXXXabcYYYabc".rmatches("abc").collect();
+-    /// assert_eq!(v, ["abc", "abc", "abc"]);
+-    ///
+-    /// let v: Vec<&str> = "1abc2abc3".rmatches(char::is_numeric).collect();
+-    /// assert_eq!(v, ["3", "2", "1"]);
+-    /// ```
+-    #[stable(feature = "str_matches", since = "1.2.0")]
+-    #[inline]
+-    pub fn rmatches<'a, P: Pattern<'a>>(&'a self, pat: P) -> RMatches<'a, P>
+-        where P::Searcher: ReverseSearcher<'a>
+-    {
+-        core_str::StrExt::rmatches(self, pat)
+-    }
+-
+-    /// An iterator over the disjoint matches of a pattern within this string
+-    /// slice as well as the index that the match starts at.
+-    ///
+-    /// For matches of `pat` within `self` that overlap, only the indices
+-    /// corresponding to the first match are returned.
+-    ///
+-    /// The pattern can be a `&str`, [`char`], or a closure that determines
+-    /// if a character matches.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// # Iterator behavior
+-    ///
+-    /// The returned iterator will be a [`DoubleEndedIterator`] if the pattern
+-    /// allows a reverse search and forward/reverse search yields the same
+-    /// elements. This is true for, eg, [`char`] but not for `&str`.
+-    ///
+-    /// [`DoubleEndedIterator`]: iter/trait.DoubleEndedIterator.html
+-    ///
+-    /// If the pattern allows a reverse search but its results might differ
+-    /// from a forward search, the [`rmatch_indices`] method can be used.
+-    ///
+-    /// [`rmatch_indices`]: #method.rmatch_indices
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let v: Vec<_> = "abcXXXabcYYYabc".match_indices("abc").collect();
+-    /// assert_eq!(v, [(0, "abc"), (6, "abc"), (12, "abc")]);
+-    ///
+-    /// let v: Vec<_> = "1abcabc2".match_indices("abc").collect();
+-    /// assert_eq!(v, [(1, "abc"), (4, "abc")]);
+-    ///
+-    /// let v: Vec<_> = "ababa".match_indices("aba").collect();
+-    /// assert_eq!(v, [(0, "aba")]); // only the first `aba`
+-    /// ```
+-    #[stable(feature = "str_match_indices", since = "1.5.0")]
+-    #[inline]
+-    pub fn match_indices<'a, P: Pattern<'a>>(&'a self, pat: P) -> MatchIndices<'a, P> {
+-        core_str::StrExt::match_indices(self, pat)
+-    }
+-
+-    /// An iterator over the disjoint matches of a pattern within `self`,
+-    /// yielded in reverse order along with the index of the match.
+-    ///
+-    /// For matches of `pat` within `self` that overlap, only the indices
+-    /// corresponding to the last match are returned.
+-    ///
+-    /// The pattern can be a `&str`, [`char`], or a closure that determines if a
+-    /// character matches.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// # Iterator behavior
+-    ///
+-    /// The returned iterator requires that the pattern supports a reverse
+-    /// search, and it will be a [`DoubleEndedIterator`] if a forward/reverse
+-    /// search yields the same elements.
+-    ///
+-    /// [`DoubleEndedIterator`]: iter/trait.DoubleEndedIterator.html
+-    ///
+-    /// For iterating from the front, the [`match_indices`] method can be used.
+-    ///
+-    /// [`match_indices`]: #method.match_indices
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let v: Vec<_> = "abcXXXabcYYYabc".rmatch_indices("abc").collect();
+-    /// assert_eq!(v, [(12, "abc"), (6, "abc"), (0, "abc")]);
+-    ///
+-    /// let v: Vec<_> = "1abcabc2".rmatch_indices("abc").collect();
+-    /// assert_eq!(v, [(4, "abc"), (1, "abc")]);
+-    ///
+-    /// let v: Vec<_> = "ababa".rmatch_indices("aba").collect();
+-    /// assert_eq!(v, [(2, "aba")]); // only the last `aba`
+-    /// ```
+-    #[stable(feature = "str_match_indices", since = "1.5.0")]
+-    #[inline]
+-    pub fn rmatch_indices<'a, P: Pattern<'a>>(&'a self, pat: P) -> RMatchIndices<'a, P>
+-        where P::Searcher: ReverseSearcher<'a>
+-    {
+-        core_str::StrExt::rmatch_indices(self, pat)
+-    }
+-
+-    /// Returns a string slice with leading and trailing whitespace removed.
+-    ///
+-    /// 'Whitespace' is defined according to the terms of the Unicode Derived
+-    /// Core Property `White_Space`.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let s = " Hello\tworld\t";
+-    ///
+-    /// assert_eq!("Hello\tworld", s.trim());
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    pub fn trim(&self) -> &str {
+-        UnicodeStr::trim(self)
+-    }
+-
+-    /// Returns a string slice with leading whitespace removed.
+-    ///
+-    /// 'Whitespace' is defined according to the terms of the Unicode Derived
+-    /// Core Property `White_Space`.
+-    ///
+-    /// # Text directionality
+-    ///
+-    /// A string is a sequence of bytes. 'Left' in this context means the first
+-    /// position of that byte string; for a language like Arabic or Hebrew
+-    /// which are 'right to left' rather than 'left to right', this will be
+-    /// the _right_ side, not the left.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let s = " Hello\tworld\t";
+-    ///
+-    /// assert_eq!("Hello\tworld\t", s.trim_left());
+-    /// ```
+-    ///
+-    /// Directionality:
+-    ///
+-    /// ```
+-    /// let s = "  English";
+-    /// assert!(Some('E') == s.trim_left().chars().next());
+-    ///
+-    /// let s = "  עברית";
+-    /// assert!(Some('ע') == s.trim_left().chars().next());
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    pub fn trim_left(&self) -> &str {
+-        UnicodeStr::trim_left(self)
+-    }
+-
+-    /// Returns a string slice with trailing whitespace removed.
+-    ///
+-    /// 'Whitespace' is defined according to the terms of the Unicode Derived
+-    /// Core Property `White_Space`.
+-    ///
+-    /// # Text directionality
+-    ///
+-    /// A string is a sequence of bytes. 'Right' in this context means the last
+-    /// position of that byte string; for a language like Arabic or Hebrew
+-    /// which are 'right to left' rather than 'left to right', this will be
+-    /// the _left_ side, not the right.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// let s = " Hello\tworld\t";
+-    ///
+-    /// assert_eq!(" Hello\tworld", s.trim_right());
+-    /// ```
+-    ///
+-    /// Directionality:
+-    ///
+-    /// ```
+-    /// let s = "English  ";
+-    /// assert!(Some('h') == s.trim_right().chars().rev().next());
+-    ///
+-    /// let s = "עברית  ";
+-    /// assert!(Some('ת') == s.trim_right().chars().rev().next());
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    pub fn trim_right(&self) -> &str {
+-        UnicodeStr::trim_right(self)
+-    }
+-
+-    /// Returns a string slice with all prefixes and suffixes that match a
+-    /// pattern repeatedly removed.
+-    ///
+-    /// The pattern can be a [`char`] or a closure that determines if a
+-    /// character matches.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// # Examples
+-    ///
+-    /// Simple patterns:
+-    ///
+-    /// ```
+-    /// assert_eq!("11foo1bar11".trim_matches('1'), "foo1bar");
+-    /// assert_eq!("123foo1bar123".trim_matches(char::is_numeric), "foo1bar");
+-    ///
+-    /// let x: &[_] = &['1', '2'];
+-    /// assert_eq!("12foo1bar12".trim_matches(x), "foo1bar");
+-    /// ```
+-    ///
+-    /// A more complex pattern, using a closure:
+-    ///
+-    /// ```
+-    /// assert_eq!("1foo1barXX".trim_matches(|c| c == '1' || c == 'X'), "foo1bar");
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    pub fn trim_matches<'a, P: Pattern<'a>>(&'a self, pat: P) -> &'a str
+-        where P::Searcher: DoubleEndedSearcher<'a>
+-    {
+-        core_str::StrExt::trim_matches(self, pat)
+-    }
+-
+-    /// Returns a string slice with all prefixes that match a pattern
+-    /// repeatedly removed.
+-    ///
+-    /// The pattern can be a `&str`, [`char`], or a closure that determines if
+-    /// a character matches.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// # Text directionality
+-    ///
+-    /// A string is a sequence of bytes. 'Left' in this context means the first
+-    /// position of that byte string; for a language like Arabic or Hebrew
+-    /// which are 'right to left' rather than 'left to right', this will be
+-    /// the _right_ side, not the left.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage:
+-    ///
+-    /// ```
+-    /// assert_eq!("11foo1bar11".trim_left_matches('1'), "foo1bar11");
+-    /// assert_eq!("123foo1bar123".trim_left_matches(char::is_numeric), "foo1bar123");
+-    ///
+-    /// let x: &[_] = &['1', '2'];
+-    /// assert_eq!("12foo1bar12".trim_left_matches(x), "foo1bar12");
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    pub fn trim_left_matches<'a, P: Pattern<'a>>(&'a self, pat: P) -> &'a str {
+-        core_str::StrExt::trim_left_matches(self, pat)
+-    }
+-
+-    /// Returns a string slice with all suffixes that match a pattern
+-    /// repeatedly removed.
+-    ///
+-    /// The pattern can be a `&str`, [`char`], or a closure that
+-    /// determines if a character matches.
+-    ///
+-    /// [`char`]: primitive.char.html
+-    ///
+-    /// # Text directionality
+-    ///
+-    /// A string is a sequence of bytes. 'Right' in this context means the last
+-    /// position of that byte string; for a language like Arabic or Hebrew
+-    /// which are 'right to left' rather than 'left to right', this will be
+-    /// the _left_ side, not the right.
+-    ///
+-    /// # Examples
+-    ///
+-    /// Simple patterns:
+-    ///
+-    /// ```
+-    /// assert_eq!("11foo1bar11".trim_right_matches('1'), "11foo1bar");
+-    /// assert_eq!("123foo1bar123".trim_right_matches(char::is_numeric), "123foo1bar");
+-    ///
+-    /// let x: &[_] = &['1', '2'];
+-    /// assert_eq!("12foo1bar12".trim_right_matches(x), "12foo1bar");
+-    /// ```
+-    ///
+-    /// A more complex pattern, using a closure:
+-    ///
+-    /// ```
+-    /// assert_eq!("1fooX".trim_right_matches(|c| c == '1' || c == 'X'), "1foo");
+-    /// ```
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    pub fn trim_right_matches<'a, P: Pattern<'a>>(&'a self, pat: P) -> &'a str
+-        where P::Searcher: ReverseSearcher<'a>
+-    {
+-        core_str::StrExt::trim_right_matches(self, pat)
+-    }
+-
+-    /// Parses this string slice into another type.
+-    ///
+-    /// Because `parse` is so general, it can cause problems with type
+-    /// inference. As such, `parse` is one of the few times you'll see
+-    /// the syntax affectionately known as the 'turbofish': `::<>`. This
+-    /// helps the inference algorithm understand specifically which type
+-    /// you're trying to parse into.
+-    ///
+-    /// `parse` can parse any type that implements the [`FromStr`] trait.
+-    ///
+-    /// [`FromStr`]: str/trait.FromStr.html
+-    ///
+-    /// # Errors
+-    ///
+-    /// Will return [`Err`] if it's not possible to parse this string slice into
+-    /// the desired type.
+-    ///
+-    /// [`Err`]: str/trait.FromStr.html#associatedtype.Err
+-    ///
+-    /// # Examples
+-    ///
+-    /// Basic usage
+-    ///
+-    /// ```
+-    /// let four: u32 = "4".parse().unwrap();
+-    ///
+-    /// assert_eq!(4, four);
+-    /// ```
+-    ///
+-    /// Using the 'turbofish' instead of annotating `four`:
+-    ///
+-    /// ```
+-    /// let four = "4".parse::<u32>();
+-    ///
+-    /// assert_eq!(Ok(4), four);
+-    /// ```
+-    ///
+-    /// Failing to parse:
+-    ///
+-    /// ```
+-    /// let nope = "j".parse::<u32>();
+-    ///
+-    /// assert!(nope.is_err());
+-    /// ```
+-    #[inline]
+-    #[stable(feature = "rust1", since = "1.0.0")]
+-    pub fn parse<F: FromStr>(&self) -> Result<F, F::Err> {
+-        core_str::StrExt::parse(self)
+-    }
+-
+     // /// Converts a `Box<str>` into a `Box<[u8]>` without copying or allocating.
+     // ///
+     // /// # Examples
