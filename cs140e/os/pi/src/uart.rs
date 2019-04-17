@@ -69,7 +69,20 @@ impl MiniUart {
         };
 
         // FIXME: Implement remaining mini UART initialization.
-        unimplemented!()
+        //data size to 8bits
+        registers.AUX_MU_LCR_REG.or_mask(0b11);
+        //BAUD rate to ~115200
+        registers.AUX_MU_BAUD.write(135);
+        //GPIO pin 14,15 to alt func 5
+        Gpio::new(14).into_alt(Function::ALT5);
+        Gpio::new(15).into_alt(Function::ALT5);
+        //enabling UART transmitter and receiver
+        registers.AUX_MU_CNTL_REG.or_mask(0b11);
+        //return
+        MiniUart {
+            registers: registers,
+            timeout: None,
+        }
     }
 
     /// Set the read timeout to `milliseconds` milliseconds.
@@ -80,14 +93,17 @@ impl MiniUart {
     /// Write the byte `byte`. This method blocks until there is space available
     /// in the output FIFO.
     pub fn write_byte(&mut self, byte: u8) {
-        unimplemented!()
+        loop {
+            if self.registers.AUX_MU_LSR_REG.has_mask(LsrStatus::TxAvailable as u8) break;
+        }
+        self.registers.AUX_MU_IO_REG.write(byte);
     }
 
     /// Returns `true` if there is at least one byte ready to be read. If this
     /// method returns `true`, a subsequent call to `read_byte` is guaranteed to
     /// return immediately. This method does not block.
     pub fn has_byte(&self) -> bool {
-        unimplemented!()
+        self.registers.AUX_MU_LSR_REG.has_mask(LsrStatus::DataReady as u8)
     }
 
     /// Blocks until there is a byte ready to read. If a read timeout is set,
@@ -99,17 +115,33 @@ impl MiniUart {
     /// returns `Ok(())`, a subsequent call to `read_byte` is guaranteed to
     /// return immediately.
     pub fn wait_for_byte(&self) -> Result<(), ()> {
-        unimplemented!()
+        match self.timeout{
+            Some(timeout) => {
+                let start = current_time();
+                while !self.has_byte() {
+                    let now = current_time();
+                    if now >= start + timeout { return Err(()); }
+                }
+            }
+            None => {
+                while !self.has_byte() {}
+            }
+        }
+        Ok(());
     }
 
     /// Reads a byte. Blocks indefinitely until a byte is ready to be read.
     pub fn read_byte(&mut self) -> u8 {
-        unimplemented!()
+        loop {
+            if self.has_byte() break;
+        }
+        self.registers.AUX_MU_IO_REG.read()
     }
 }
 
 // FIXME: Implement `fmt::Write` for `MiniUart`. A b'\r' byte should be written
 // before writing any b'\n' byte.
+
 
 #[cfg(feature = "std")]
 mod uart_io {
