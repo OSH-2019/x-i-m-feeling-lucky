@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["StackVec","A contiguous array type backed by a slice."]]});

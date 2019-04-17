@@ -1,0 +1,16 @@
+/home/zhengf/program/cs140e/1-shell/ttywrite/target/debug/deps/libsyn-2df6121de4982607.rlib: /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/lib.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/attr.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/constant.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/data.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/escape.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/generics.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/ident.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/lit.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/mac.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/derive.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/op.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/ty.rs
+
+/home/zhengf/program/cs140e/1-shell/ttywrite/target/debug/deps/syn-2df6121de4982607.d: /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/lib.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/attr.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/constant.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/data.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/escape.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/generics.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/ident.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/lit.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/mac.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/derive.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/op.rs /home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/ty.rs
+
+/home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/lib.rs:
+/home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/attr.rs:
+/home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/constant.rs:
+/home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/data.rs:
+/home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/escape.rs:
+/home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/generics.rs:
+/home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/ident.rs:
+/home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/lit.rs:
+/home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/mac.rs:
+/home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/derive.rs:
+/home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/op.rs:
+/home/zhengf/.cargo/registry/src/github.com-1ecc6299db9ec823/syn-0.11.11/src/ty.rs:

@@ -1,0 +1,1 @@
+{"rustc":4125939514485081142,"features":"[]","target":3897385482812734822,"profile":9935990280773120926,"path":186676762380932213,"deps":[["serial-core v0.4.0","serial_core",9561011462299523958],["serial-unix v0.4.0","serial_unix",268593633021407971]],"local":[{"Precalculated":"0.4.0"}],"rustflags":[],"metadata":13769046737118447800}

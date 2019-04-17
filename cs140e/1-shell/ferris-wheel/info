@@ -1,0 +1,73 @@
+SUCCESS: compile-pass/borrow-1.rs
+
+SUCCESS: compile-pass/const.rs
+
+SUCCESS: compile-pass/derive.rs
+
+SUCCESS: compile-pass/feature-1.rs
+
+SUCCESS: compile-pass/io-read-write.rs
+
+SUCCESS: compile-pass/lifetimes-1.rs
+
+SUCCESS: compile-pass/lifetimes-2.rs
+
+SUCCESS: compile-pass/lifetimes-3.rs
+
+SUCCESS: compile-pass/lifetimes-4.rs
+
+SUCCESS: compile-pass/mutability-1.rs
+
+SUCCESS: compile-pass/mutability-2.rs
+
+SUCCESS: compile-pass/mutability-3.rs
+
+SUCCESS: compile-pass/mutability-4.rs
+
+SUCCESS: compile-pass/pattern-match-1.rs
+
+SUCCESS: compile-pass/privacy.rs
+
+SUCCESS: compile-pass/semi.rs
+
+SUCCESS: compile-pass/trait-namespace.rs
+
+ERROR: compile-pass/try.rs failed to compile!
+---------------------- stderr --------------------------
+error[E0308]: mismatched types
+  --> /home/zhengf/program/cs140e/1-shell/ferris-wheel/compile-pass/try.rs:19:9
+   |
+19 |     Ok((do_a(), do_b()))
+   |         ^^^^^^ expected u16, found enum `std::result::Result`
+   |
+   = note: expected type `u16`
+              found type `std::result::Result<u16, ErrorA>`
+
+error[E0308]: mismatched types
+  --> /home/zhengf/program/cs140e/1-shell/ferris-wheel/compile-pass/try.rs:19:17
+   |
+19 |     Ok((do_a(), do_b()))
+   |                 ^^^^^^ expected u32, found enum `std::result::Result`
+   |
+   = note: expected type `u32`
+              found type `std::result::Result<u32, ErrorB>`
+
+error: aborting due to 2 previous errors
+
+For more information about this error, try `rustc --explain E0308`.
+
+ERROR: compile-fail/modules-1.rs compiled unexpectedly!
+
+SUCCESS: compile-fail/move.rs
+
+SUCCESS: run-pass/borrow-2.rs
+
+SUCCESS: run-pass/builder.rs
+
+SUCCESS: run-pass/expressions.rs
+
+SUCCESS: run-pass/trait-impl.rs
+
+SUCCESS: run-pass/ufcs.rs
+
+23 passes, 2 failures
