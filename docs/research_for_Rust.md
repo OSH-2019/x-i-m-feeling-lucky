@@ -13,7 +13,7 @@
                 - [Memory management](#memory-management)
                 - [Ownership](#ownership)
             - [2.2.3 当前基于 Rust 的 OS 的对比分析](#223-当前基于-rust-的-os-的对比分析)
-            - [2.2.4 Redox OS](#224-redox-os)
+            - [2.2.4 Re!dox OS](#224-redox-os)
     - [3. 立项依据](#3-立项依据)
         - [3.1 项目名称](#31-项目名称)
         - [3.2 项目介绍](#32-项目介绍)
@@ -27,7 +27,7 @@
 
 ## 1. 项目简介
 
-**Implementing an OS on a Raspberry Pi 3 with Rust**
+**Implementing an OS for Raspberry Pi 3 in Rust**
 
 使用 Rust 编程语言写一个能在树莓派上运行的操作系统。
 

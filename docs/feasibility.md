@@ -56,7 +56,7 @@
 
 ## 一、项目名称
 
-<big>**Implementing an OS on a Raspberry Pi 3 with Rust**</big>
+<big>**Implementing an OS for Raspberry Pi 3 in Rust**</big>
 
 ## 二、项目简介
 

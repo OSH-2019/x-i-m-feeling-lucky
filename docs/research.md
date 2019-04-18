@@ -13,7 +13,7 @@
 
 ## 调研报告
 
-### A. [Implementing an OS on a Raspberry Pi 3 with Rust](research_for_Rust.md)
+### A. [Implementing an OS for Raspberry Pi 3 in Rust](research_for_Rust.md)
 
 ### B. [Enhanced Distributed File System](research_for_DFS.md)
 

@@ -7,7 +7,7 @@
 - 余磊 PB17051053
 
 ## 项目
-### A. [Final] Implementing an OS on a Raspberry Pi 3 with Rust
+### A. [Final] Implementing an OS for Raspberry Pi 3 in Rust
 ### B. Enhanced Distributed File System
 
 
