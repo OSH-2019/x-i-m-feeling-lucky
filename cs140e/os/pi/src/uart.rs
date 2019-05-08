@@ -162,7 +162,6 @@ impl fmt::Write for MiniUart {
 mod uart_io {
     use std::io;
     use super::MiniUart;
-
     // FIXME: Implement `io::Read` and `io::Write` for `MiniUart`.
     //
     // The `io::Read::read()` implementation must respect the read timeout by
@@ -171,7 +170,7 @@ mod uart_io {
     // read times out, an error of kind `TimedOut` should be returned.
     //
     impl io::Read for MiniUart {
-        fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+        fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
             match self.wait_for_byte() {
                 Ok(()) => {
                     let mut count = 0;
@@ -183,7 +182,7 @@ mod uart_io {
                     Ok(count)
                 }
                 Err(()) => {
-                    Err(io::Err::new(io::kind::TimedOut, "UART time out!"))
+                    Err(io::Error::new(io::ErrorKind::TimedOut, "UART time out!"))
                 }
             }
         }
@@ -191,13 +190,17 @@ mod uart_io {
     // The `io::Write::write()` method must write all of the requested bytes
     // before returning.
     impl io::Write for MiniUart {
-        fn write(&mut self, buf: &[u8]) -> Result<usize> {
+        fn write(&mut self, buf: &[u8]) -> Result<usize, io::Error> {
             let mut count = 0;
-            for byte in buf {
-                self.write(*byte);
+            for &byte in buf {
+                self.write_byte(byte);
                 count += 1;
             }
             Ok(count)
+        }
+
+        fn flush(&mut self) -> Result<(), io::Error> {
+            Ok(())
         }
     }
 }
