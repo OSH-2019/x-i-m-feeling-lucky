@@ -19,7 +19,7 @@
 
 - 4.3 ~ 4.9 完成[可行性报告](docs/feasibility.md)；
 
-
+- 4.24 [中期汇报](docs/mid_term_report.pptx)；
 
 ## 课程规划
 
