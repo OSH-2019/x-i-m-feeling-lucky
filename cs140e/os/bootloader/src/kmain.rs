@@ -3,6 +3,8 @@
 extern crate xmodem;
 extern crate pi;
 
+use pi::uart::MiniUart;
+
 pub mod lang_items;
 
 /// Start address of the binary to load and of the bootloader.
@@ -25,5 +27,20 @@ fn jump_to(addr: *mut u8) -> ! {
 
 #[no_mangle]
 pub extern "C" fn kmain() {
-    // FIXME: Implement the bootloader.
+    let mut uart = MiniUart::new();
+    uart.set_read_timeout(750); // 750ms
+    let mut buf = unsafe {
+        std::slice::from_raw_parts_mut(BINARY_START, MAX_BINARY_SIZE)
+    };
+
+    loop {
+        match xmodem::Xmodem::receive(&mut uart, &mut buf) {
+            Ok(_) => {
+                break;
+            }
+            Err(_) => {
+            }
+        }
+    }
+    jump_to(BINARY_START);
 }

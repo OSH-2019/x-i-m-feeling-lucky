@@ -49,8 +49,8 @@ impl<'a> Command<'a> {
                 }
                 kprintln!("{}", self.args.as_slice()[length-1]);
             }
-            othercmd => {
-                kprintln!("unknown command: {}", othercmd);
+            _ => {
+                kprintln!("unknown command: {}", self.path());
             }
         }
     }
@@ -80,7 +80,8 @@ fn readcmd(buf: &mut [u8]) -> &str {
             }
             byte @ b' ' ... b'~' => {                       //normal char
                 kprint!("{}", byte);
-                buf[len] = byte; len += 1;
+                buf[len] = byte;
+                len += 1;
             }
             _ => {                                             //unrecognized char
                 kprint!("{}", BE as char);

@@ -1,0 +1,23 @@
+[[package]]
+name = "bootloader"
+version = "0.1.0"
+dependencies = [
+ "pi 0.1.0",
+ "xmodem 0.1.0",
+]
+
+[[package]]
+name = "pi"
+version = "0.1.0"
+dependencies = [
+ "volatile 0.1.0",
+]
+
+[[package]]
+name = "volatile"
+version = "0.1.0"
+
+[[package]]
+name = "xmodem"
+version = "0.1.0"
+
