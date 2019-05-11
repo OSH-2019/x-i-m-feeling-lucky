@@ -42,5 +42,6 @@ pub extern "C" fn kmain() {
             }
         }
     }
+
     jump_to(BINARY_START);
 }

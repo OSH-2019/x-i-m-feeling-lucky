@@ -20,4 +20,5 @@ pub mod shell;
 #[no_mangle]
 pub extern "C" fn kmain() {
     // FIXME: Start the shell.
+    shell::shell("$ ");
 }
