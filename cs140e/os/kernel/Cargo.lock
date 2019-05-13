@@ -1,7 +1,12 @@
 [[package]]
+name = "fat32"
+version = "0.1.0"
+
+[[package]]
 name = "kernel"
 version = "0.1.0"
 dependencies = [
+ "fat32 0.1.0",
  "pi 0.1.0",
  "stack-vec 0.1.0",
 ]

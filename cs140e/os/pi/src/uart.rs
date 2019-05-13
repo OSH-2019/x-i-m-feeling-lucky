@@ -24,27 +24,17 @@ enum LsrStatus {
 #[allow(non_snake_case)]
 struct Registers {
     // FIXME: Declare the "MU" registers from page 8.,
-    AUX_MU_IO_REG:  Volatile<u8>,
-    _r0: [Reserved<u8>; 3],
-    AUX_MU_IER_REG: Volatile<u8>,
-    _r1: [Reserved<u8>; 3],
-    AUX_MU_IIR_REG: Volatile<u8>,
-    _r2: [Reserved<u8>; 3],
-    AUX_MU_LCR_REG: Volatile<u8>,
-    _r3: [Reserved<u8>; 3],
-    AUX_MU_MCR_REG: Volatile<u8>,
-    _r4: [Reserved<u8>; 3],
-    AUX_MU_LSR_REG: ReadVolatile<u8>,
-    _r5: [Reserved<u8>; 3],
-    AUX_MU_MSR_REG: ReadVolatile<u8>,
-    _r6: [Reserved<u8>; 3],
-    AUX_MU_SCRATCH: Volatile<u8>,
-    _r7: [Reserved<u8>; 3],
-    AUX_MU_CNTL_REG:Volatile<u8>,
-    _r8: [Reserved<u8>; 3],
+    AUX_MU_IO_REG:  Volatile<u32>,
+    AUX_MU_IER_REG: Volatile<u32>,
+    AUX_MU_IIR_REG: Volatile<u32>,
+    AUX_MU_LCR_REG: Volatile<u32>,
+    AUX_MU_MCR_REG: Volatile<u32>,
+    AUX_MU_LSR_REG: Volatile<u32>,
+    AUX_MU_MSR_REG: ReadVolatile<u32>,
+    AUX_MU_SCRATCH: Reserved<u32>,
+    AUX_MU_CNTL_REG:Volatile<u32>,
     AUX_MU_STAT_REG:ReadVolatile<u32>,
-    AUX_MU_BAUD    :Volatile<u16>,
-    _r9: Reserved<u16>
+    AUX_MU_BAUD    :Volatile<u32>,
 }
 
 /// The Raspberry Pi's "mini UART".
@@ -72,7 +62,7 @@ impl MiniUart {
         //data size to 8bits
         registers.AUX_MU_LCR_REG.or_mask(0b11);
         //BAUD rate to ~115200
-        registers.AUX_MU_BAUD.write(135);
+        registers.AUX_MU_BAUD.write(270);
         //GPIO pin 14,15 to alt func 5
         Gpio::new(14).into_alt(Function::Alt5);
         Gpio::new(15).into_alt(Function::Alt5);
@@ -94,16 +84,16 @@ impl MiniUart {
     /// in the output FIFO.
     pub fn write_byte(&mut self, byte: u8) {
         loop {
-            if self.registers.AUX_MU_LSR_REG.has_mask(LsrStatus::TxAvailable as u8) { break; }
+            if self.registers.AUX_MU_LSR_REG.has_mask(LsrStatus::TxAvailable as u32) { break; }
         }
-        self.registers.AUX_MU_IO_REG.write(byte);
+        self.registers.AUX_MU_IO_REG.write(byte as u32);
     }
 
     /// Returns `true` if there is at least one byte ready to be read. If this
     /// method returns `true`, a subsequent call to `read_byte` is guaranteed to
     /// return immediately. This method does not block.
     pub fn has_byte(&self) -> bool {
-        self.registers.AUX_MU_LSR_REG.has_mask(LsrStatus::DataReady as u8)
+        self.registers.AUX_MU_LSR_REG.has_mask(LsrStatus::DataReady as u32)
     }
 
     /// Blocks until there is a byte ready to read. If a read timeout is set,
@@ -120,7 +110,7 @@ impl MiniUart {
                 let start = timer::current_time();
                 while !self.has_byte() {
                     let now = timer::current_time();
-                    if now >= start + (timeout as u64){ return Err(()); }
+                    if now >= start + (timeout as u64) * 1000 { return Err(()); }
                 }
             }
             None => {
@@ -135,7 +125,7 @@ impl MiniUart {
         loop {
             if self.has_byte() { break; }
         }
-        self.registers.AUX_MU_IO_REG.read()
+        (self.registers.AUX_MU_IO_REG.read() & 0xFF) as u8
     }
 }
 
@@ -145,7 +135,7 @@ impl fmt::Write for MiniUart {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for byte in s.bytes() {
             match byte {
-                b'\r' => {
+                b'\n' => {
                     self.write_byte(b'\r');
                     self.write_byte(b'\n');
                 }

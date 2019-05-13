@@ -71,15 +71,9 @@ pub static CONSOLE: Mutex<Console> = Mutex::new(Console::new());
 /// Internal function called by the `kprint[ln]!` macros.
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
-    #[cfg(not(test))]
-    {
-        use std::fmt::Write;
-        let mut console = CONSOLE.lock();
-        console.write_fmt(args).unwrap();
-    }
-
-    #[cfg(test)]
-    { print!("{}", args); }
+    use std::fmt::Write;
+    let mut console = CONSOLE.lock();
+    console.write_fmt(args).unwrap();
 }
 
 /// Like `println!`, but for kernel-space.

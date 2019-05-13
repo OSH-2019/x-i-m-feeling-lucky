@@ -79,7 +79,7 @@ fn readcmd(buf: &mut [u8]) -> &str {
                 kprint!("{}", BE as char);
             }
             byte @ b' ' ... b'~' => {                       //normal char
-                kprint!("{}", byte);
+                kprint!("{}", byte as char);
                 buf[len] = byte;
                 len += 1;
             }

@@ -51,7 +51,7 @@ states! {
     Uninitialized, Input, Output, Alt
 }
 
-/// A GPIO pin in state `State`.
+/// A GPIP pin in state `State`.
 ///
 /// The `State` generic always corresponds to an uninstantiatable type that is
 /// use solely to mark and track the state of a given GPIO pin. A `Gpio`

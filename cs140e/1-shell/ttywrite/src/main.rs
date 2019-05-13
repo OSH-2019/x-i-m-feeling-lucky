@@ -6,7 +6,7 @@ extern crate xmodem;
 
 //use std::time::Instant;
 use std::path::PathBuf;
-//use std::time::Duration;
+use std::time::Duration;
 
 use structopt::StructOpt;
 use serial::core::{CharSize, BaudRate, StopBits, FlowControl, SerialDevice, SerialPortSettings};
@@ -50,7 +50,7 @@ struct Opt {
 }
 
 fn progress_fn(_progress: Progress) {
-
+    println!("Progress: {:?}", _progress);
 }
 
 fn main() {
@@ -66,7 +66,8 @@ fn main() {
     settings.set_char_size(opt.char_width);
     settings.set_stop_bits(opt.stop_bits);
     settings.set_flow_control(opt.flow_control);
-
+    serial.write_settings( & settings ).is_ok();
+    serial.set_timeout( Duration::from_secs(opt.timeout) ).is_ok();
 
     if opt.raw {
         match opt.input {

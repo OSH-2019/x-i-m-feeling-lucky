@@ -36,8 +36,6 @@ pub static FILE_SYSTEM: FileSystem = FileSystem::uninitialized();
 #[no_mangle]
 #[cfg(not(test))]
 pub extern "C" fn kmain() {
-    ALLOCATOR.initialize();
-	
-    // FIXME: Start the shell.
+    // ALLOCATOR.initialize();
     shell::shell("$ ");
 }

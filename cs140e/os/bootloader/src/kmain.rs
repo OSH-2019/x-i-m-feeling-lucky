@@ -3,8 +3,6 @@
 extern crate xmodem;
 extern crate pi;
 
-use pi::uart::MiniUart;
-
 pub mod lang_items;
 
 /// Start address of the binary to load and of the bootloader.
@@ -42,6 +40,5 @@ pub extern "C" fn kmain() {
             }
         }
     }
-
     jump_to(BINARY_START);
 }
