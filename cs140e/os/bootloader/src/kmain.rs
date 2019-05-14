@@ -5,8 +5,6 @@ extern crate pi;
 
 pub mod lang_items;
 
-use pi::uart::MiniUart;
-
 /// Start address of the binary to load and of the bootloader.
 const BINARY_START_ADDR: usize = 0x80000;
 const BOOTLOADER_START_ADDR: usize = 0x4000000;
