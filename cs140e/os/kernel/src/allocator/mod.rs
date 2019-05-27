@@ -7,8 +7,9 @@ mod imp;
 #[cfg(test)]
 mod tests;
 
-use mutex::Mutex;
 use alloc::heap::{Alloc, AllocErr, Layout};
+use mutex::Mutex;
+use pi::atags::Atags;
 use std::cmp::max;
 
 /// Thread-safe (locking) wrapper around a particular memory allocator.
@@ -57,7 +58,11 @@ unsafe impl<'a> Alloc for &'a Allocator {
     /// (`AllocError::Exhausted`) or `layout` does not meet this allocator's
     /// size or alignment constraints (`AllocError::Unsupported`).
     unsafe fn alloc(&mut self, layout: Layout) -> Result<*mut u8, AllocErr> {
-        self.0.lock().as_mut().expect("allocator uninitialized").alloc(layout)
+        self.0
+            .lock()
+            .as_mut()
+            .expect("allocator uninitialized")
+            .alloc(layout)
     }
 
     /// Deallocates the memory referenced by `ptr`.
@@ -74,7 +79,11 @@ unsafe impl<'a> Alloc for &'a Allocator {
     /// Parameters not meeting these conditions may result in undefined
     /// behavior.
     unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
-        self.0.lock().as_mut().expect("allocator uninitialized").dealloc(ptr, layout);
+        self.0
+            .lock()
+            .as_mut()
+            .expect("allocator uninitialized")
+            .dealloc(ptr, layout);
     }
 }
 
@@ -89,5 +98,13 @@ extern "C" {
 fn memory_map() -> Option<(usize, usize)> {
     let binary_end = unsafe { (&_end as *const u8) as u32 };
 
-    unimplemented!("memory map fetch")
+    for atag in Atags::get() {
+        if let Atags::Mem(mem) = atag.mem() {
+            let start = max(binary_end, mem.start) as usize;
+            let end = (mem.start + mem.size) as usize;
+            return Some((start, end));
+        }
+    }
+
+    None
 }
