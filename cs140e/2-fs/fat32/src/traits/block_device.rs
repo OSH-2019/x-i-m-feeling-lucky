@@ -35,7 +35,7 @@ pub trait BlockDevice: Send {
             vec.reserve(sector_size - available);
         }
 
-        unsafe { vec.set_len(start + sector_size); }
+        unsafe { vec.set_len(start + &sector_size); }
         let read = self.read_sector(n, &mut vec[start..])?;
         unsafe { vec.set_len(start + read); }
         Ok(read)

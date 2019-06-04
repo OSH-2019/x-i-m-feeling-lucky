@@ -2,29 +2,50 @@ use std::{fmt, io};
 
 use traits::BlockDevice;
 
+const MBR_SIZE: usize = 512;
+
 #[repr(C, packed)]
 #[derive(Copy, Clone)]
 pub struct CHS {
-    // FIXME: Fill me in.
+    head: u8,
+    sector_and_cylinder: [u8;2]
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub struct PartitionType(u8);
+
+impl PartitionType {
+    pub fn is_fat(&self) -> bool {
+        self.0 == 0x0B || self.0 == 0x0C
+    }
 }
 
 #[repr(C, packed)]
 #[derive(Debug, Clone)]
 pub struct PartitionEntry {
-    // FIXME: Fill me in.
+    indicator: u8,
+    starting_chs: CHS,
+    partition_type: PartitionType,
+    ending_chs: CHS,
+    relative_sector: [u8; 4],
+    total_sectors: [u8; 4]
 }
 
 /// The master boot record (MBR).
 #[repr(C, packed)]
 pub struct MasterBootRecord {
-    // FIXME: Fill me in.
+    bootstrap: [u8; 436],
+    disk_id: [u8; 10],
+    partition_entries: [PartitionEntry; 4],
+    signature: [u8; 2]
 }
 
 #[derive(Debug)]
 pub enum Error {
     /// There was an I/O error while reading the MBR.
     Io(io::Error),
-    /// Partiion `.0` (0-indexed) contains an invalid or unknown boot indicator.
+    /// Partition `.0` (0-indexed) contains an invalid or unknown boot indicator.
     UnknownBootIndicator(u8),
     /// The MBR magic signature was invalid.
     BadSignature,
@@ -40,12 +61,41 @@ impl MasterBootRecord {
     /// boot indicator. Returns `Io(err)` if the I/O error `err` occured while
     /// reading the MBR.
     pub fn from<T: BlockDevice>(mut device: T) -> Result<MasterBootRecord, Error> {
-        unimplemented!("MasterBootRecord::from()")
+
+        let mut buf = [0u8; MBR_SIZE];
+        let bytes_read = device.read_sector(0, &buf);
+
+        let mbr: MasterBootRecord = unsafe { mem::transmute(buf)};
+
+        if mbr.signature != [0x55, 0xAA] {
+            return Err(Error::BadSignature);
+        }
+
+        for i in 0..4 {
+            if mbr.partition_entries[i].indicator != 0x80
+                && mbr.partition_entries[i].indicator != 0x00 {
+                return Err(UnknownBootIndicator(i as u8))
+            }
+        }
+
+        Ok(mbr)
     }
 }
 
 impl fmt::Debug for MasterBootRecord {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        unimplemented!("MasterBootRecord::fmt()")
+        f.debug_struct("MasterBootRecord")
+            .field("bootstrap", &self.bootstrap)
+            .field("disk_id", &self.disk_id)
+            .field("partition_entry_0", &self.partition_entries[0])
+            .field("partition_entry_1", &self.partition_entries[1])
+            .field("partition_entry_2", &self.partition_entries[2])
+            .field("partition_entry_3", &self.partition_entries[3])
+            .finish()
     }
 }
+
+// bootstrap: [u8; 436],
+// disk_id: [u8; 10],
+// partition_entries: [PartitionEntry; 4],
+// signature: [u8; 2]

@@ -49,8 +49,8 @@ impl CachedDevice {
 
         CachedDevice {
             device: Box::new(device),
-            cache: HashMap::new(),
-            partition: partition
+            cache: HashMap::new(u64, CacheEntry),
+            partition
         }
     }
 
@@ -81,7 +81,19 @@ impl CachedDevice {
     ///
     /// Returns an error if there is an error reading the sector from the disk.
     pub fn get_mut(&mut self, sector: u64) -> io::Result<&mut [u8]> {
-        unimplemented!("CachedDevice::get_mut()")
+        self.get(sector)?;
+
+        match self.cache.get_mut(&sector) {
+            Some(mut x) => {
+                x.dirty = true;
+                Ok(x.data.as_mut_slice())
+            }
+
+            None => {
+                Err(())
+            }
+
+        }
     }
 
     /// Returns a reference to the cached sector `sector`. If the sector is not
@@ -91,12 +103,34 @@ impl CachedDevice {
     ///
     /// Returns an error if there is an error reading the sector from the disk.
     pub fn get(&mut self, sector: u64) -> io::Result<&[u8]> {
-        unimplemented!("CachedDevice::get()")
+        if !self.cache.contains_key(&sector) {
+            let (physical, factor) = self.virutal_to_physical(sector);
+            let mut buf = vec![0u8;(self.device.sector_size * factor) as usize];
+            for i in 0..factor {
+                self.device.read_sector(physical + i, &mut buf[(self.device.sector_size * i) as usize ..] )?;
+            }
+
+            self.cache.insert(&sector, CacheEntry{ data: buf, dirty: false});
+        }
+
+        Ok(self.cache.get(&sector).unwrap().data.as_slice())
     }
 }
 
 // FIXME: Implement `BlockDevice` for `CacheDevice`. The `read_sector` and
 // `write_sector` methods should only read/write from/to cached sectors.
+
+impl BlockDevice for CacheDevice {
+
+    fn read_sector(&mut self, n:u64, mut buf: &mut[u8]) -> io::Result<usize> {
+        buf.write(self.get(n)?)
+    }
+
+    fn write_sector(&mut self, n:u64, mut buf: &[u8]) -> io::Result<usize> {
+        self.get_mut(n)?.write(buf)
+    }
+}
+
 
 impl fmt::Debug for CachedDevice {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
