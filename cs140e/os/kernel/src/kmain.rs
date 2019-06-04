@@ -36,6 +36,13 @@ pub static FILE_SYSTEM: FileSystem = FileSystem::uninitialized();
 #[no_mangle]
 #[cfg(not(test))]
 pub extern "C" fn kmain() {
-    // ALLOCATOR.initialize();
-    shell::shell("$");
+    ALLOCATOR.initialize();
+    //#[cfg(feature = "qemu")]
+    //Timer::initialize();
+    FILE_SYSTEM.initialize();
+    //spin_sleep_ms(200);
+    //SCHEDULER.start();
+    loop {
+        shell::shell("$");
+    }
 }
