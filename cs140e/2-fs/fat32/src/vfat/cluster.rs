@@ -9,4 +9,8 @@ impl From<u32> for Cluster {
     }
 }
 
-// TODO: Implement any useful helper methods on `Cluster`.
+impl Cluster {
+    pub fn cluster_index(&self) -> usize {
+        &self.0 as usize
+    }
+}

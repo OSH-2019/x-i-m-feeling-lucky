@@ -38,7 +38,7 @@ impl VFat {
             Partition {
                 start,
                 sector_size: ebpb.bytes_per_sector() as u64,
-            }
+            },
         );
 
         Ok(Shared::new(Vfat {
@@ -64,7 +64,25 @@ impl VFat {
         offset: usize,
         buf: &mut [u8],
     ) -> io::Result<usize> {
-        Ok(0)
+
+        let mut sector_start = &self.data_start_sector as usize +
+            (cluster.cluster_index() as usize - 2usize ) * &self.sectors_per_cluster as usize;
+
+        let mut already_read: usize = 0;
+
+        loop {
+            let sector_index = (offset+already_read) as usize / &self.bytes_per_sector as u64;
+            if sector_index >= self.sectors_per_cluster {
+                break;
+            } else {
+                let new_offset = (offset + already_read) as usize - sector_index as usize * &self.bytes_per_sector as usize;
+                let newly_read = buf.write(&(self.device.get(sector_start+sector_index)?)[new_offset..])?;
+                already_read += newly_read;
+                if buf.is_empty() {
+                    break;
+                }
+            }
+        }
     }
 
 //      * A method to read all of the clusters chained from a starting cluster
@@ -101,14 +119,14 @@ impl<'a> FileSystem for &'a Shared<VFat> {
         for x in path.as_ref().components() {
             match x {
                 Component::Normal(name) => {
-                    cur_dir = cur_dir.as_dir().ok_or(io::Error::new(io::ErrorKind::NotFound,"Not Found"))?.find(name)?
-                },
-
-                Component::ParentDir => {
-                    cur_dir = cur_dir.as_dir().ok_or(io::Error::new(io::ErrorKind::NotFound,"Not Found"))?.find("..")?
+                    cur_dir = cur_dir.as_dir().ok_or(io::Error::new(io::ErrorKind::NotFound, "Not Found"))?.find(name)?
                 }
 
-                _ => {},
+                Component::ParentDir => {
+                    cur_dir = cur_dir.as_dir().ok_or(io::Error::new(io::ErrorKind::NotFound, "Not Found"))?.find("..")?
+                }
+
+                _ => {}
             }
         }
     }
