@@ -10,25 +10,53 @@ use vfat::{Metadata, Attributes, Timestamp, Time, Date};
 
 #[derive(Debug)]
 pub struct Dir {
-    // FIXME: Fill me in.
+    pub name: String,
+    pub lfn: String,
+    pub first_cluster: Cluster,
+    pub vfat: Shared<VFat>,
+    pub metadata: Metadata,
+
 }
 
 #[repr(C, packed)]
 #[derive(Copy, Clone)]
 pub struct VFatRegularDirEntry {
-    // FIXME: Fill me in.
+    name: [u8;8],
+    extension: [u8;3],
+    attributes: Attributes,
+    reserved_by_windows_nt: u8,
+    creation_time_in_tenths: u8,
+    create_time: Time,
+    create_date: Date,
+    access_time: Time,
+    access_data: Data,
+    first_cluster_number_high: u16,
+    modify_time: Time,
+    modify_data: Data,
+    first_cluster_number_low: u16,
+    size_in_bytes: u32,
+
 }
 
 #[repr(C, packed)]
 #[derive(Copy, Clone)]
 pub struct VFatLfnDirEntry {
-    // FIXME: Fill me in.
+    sequence_number: u8,
+    name_characters: [u8;10],
+    attributes: u8,
+    lfn_type: u8,
+    checksum: u8,
+    name_characters_second: [u8;12],
+    always_zero: u16,
+    name_characters_third: [u8;4],
 }
 
 #[repr(C, packed)]
 #[derive(Copy, Clone)]
 pub struct VFatUnknownDirEntry {
-    // FIXME: Fill me in.
+    _placeholder0: [u8;11],
+    attributes: u8,
+    _placeholder1: [u8;20],
 }
 
 pub union VFatDirEntry {
@@ -54,3 +82,12 @@ impl Dir {
 }
 
 // FIXME: Implement `trait::Dir` for `Dir`.
+impl traits::Dir for Dir {
+    type Entry = Entry;
+    type Iter = VFatEntryIterator;
+
+    fn entries(&self) -> io::Result<Self::Iter> {
+        let mut data: Vec<u8> = Vec::new();
+        self.vfat.borrow_mut().read_chain(self.first_cluster, &mut data);
+    }
+}

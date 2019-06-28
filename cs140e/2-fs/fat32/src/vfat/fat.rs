@@ -51,7 +51,7 @@ impl FatEntry {
         }
     }
 }
-}
+
 
 impl fmt::Debug for FatEntry {
 fn fmt( & self, f: & mut fmt::Formatter) -> fmt::Result {
