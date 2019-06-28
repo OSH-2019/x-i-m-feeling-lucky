@@ -64,25 +64,26 @@ impl VFat {
         offset: usize,
         buf: &mut [u8],
     ) -> io::Result<usize> {
-
         let mut sector_start = &self.data_start_sector as usize +
-            (cluster.cluster_index() as usize - 2usize ) * &self.sectors_per_cluster as usize;
+            (cluster.cluster_index() as usize - 2usize) * &self.sectors_per_cluster as usize;
 
         let mut already_read: usize = 0;
 
         loop {
-            let sector_index = (offset+already_read) as usize / &self.bytes_per_sector as u64;
+            let sector_index = (offset + already_read) as usize / &self.bytes_per_sector as u64;
             if sector_index >= self.sectors_per_cluster {
                 break;
             } else {
                 let new_offset = (offset + already_read) as usize - sector_index as usize * &self.bytes_per_sector as usize;
-                let newly_read = buf.write(&(self.device.get(sector_start+sector_index)?)[new_offset..])?;
+                let newly_read = buf.write(&(self.device.get(sector_start + sector_index)?)[new_offset..])?;
                 already_read += newly_read;
                 if buf.is_empty() {
                     break;
                 }
             }
         }
+
+        Ok(already_read)
     }
 
 //      * A method to read all of the clusters chained from a starting cluster
@@ -93,15 +94,44 @@ impl VFat {
         start: Cluster,
         buf: &mut Vec<u8>,
     ) -> io::Result<usize> {
-        Ok(0)
+        let mut already_read: usize = 0;
+        let mut current = start;
+
+        loop {
+            let fat_entry = self.fat_entry(cluster)?.status();
+
+            match fat_entry {
+                Status::Data(next) => {
+                    current = next;
+                }
+                Status::Eoc(_) => {
+                    return Ok(already_read);
+                }
+                _ => {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid sector"));
+                }
+            }
+        }
+//        Ok(already_read)
     }
 
 //      * A method to return a reference to a `FatEntry` for a cluster where the
 //        reference points directly into a cached sector.
 
     fn fat_entry(&mut self, cluster: Cluster) -> io::Result<&FatEntry> {
-        let a: FatEntry = FatEntry(0);
-        Ok(&a)
+        let cluster_index = cluster.cluster_index();
+        let entries_per_sector = self.bytes_per_sector / size_of::<FatEntry>();
+
+        let fat_index = cluster_index / entries_per_sector;
+        let fat_offset = cluster_index % entries_per_sector;
+
+        if fat_index >= self.sectors_per_fat {
+            return Err(io::Error::new(io::ErrorKind::NotFound, "Invalid cluster"));
+        }
+
+        let data = self.device.get(self.fat_start_sector + fat_index)?;
+        let entries: &[FatEntry] = unsafe { sec.cast() };
+        Ok(&entries[fat_offset])
     }
 }
 
