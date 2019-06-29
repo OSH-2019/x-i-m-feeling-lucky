@@ -49,7 +49,7 @@ impl CachedDevice {
 
         CachedDevice {
             device: Box::new(device),
-            cache: HashMap::new(u64, CacheEntry),
+            cache: HashMap::new(),
             partition
         }
     }
@@ -120,7 +120,7 @@ impl CachedDevice {
 // FIXME: Implement `BlockDevice` for `CacheDevice`. The `read_sector` and
 // `write_sector` methods should only read/write from/to cached sectors.
 
-impl BlockDevice for CacheDevice {
+impl BlockDevice for CachedDevice {
 
     fn read_sector(&mut self, n:u64, mut buf: &mut[u8]) -> io::Result<usize> {
         buf.write(self.get(n)?)

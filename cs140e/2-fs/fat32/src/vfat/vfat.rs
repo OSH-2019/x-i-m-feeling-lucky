@@ -41,7 +41,7 @@ impl VFat {
             },
         );
 
-        Ok(Shared::new(Vfat {
+        Ok(Shared::new(VFat {
             device: dev,
             bytes_per_sector: ebpb.bytes_per_sector,
             sectors_per_cluster: ebpb.sectors_per_cluster,
@@ -98,7 +98,7 @@ impl VFat {
         let mut current = start;
 
         loop {
-            let fat_entry = self.fat_entry(cluster)?.status();
+            let fat_entry = self.fat_entry(current)?.status();
 
             match fat_entry {
                 Status::Data(next) => {
@@ -130,7 +130,7 @@ impl VFat {
         }
 
         let data = self.device.get(self.fat_start_sector + fat_index)?;
-        let entries: &[FatEntry] = unsafe { sec.cast() };
+        let entries: &[FatEntry] = unsafe { data.cast() };
         Ok(&entries[fat_offset])
     }
 }
@@ -162,22 +162,26 @@ impl<'a> FileSystem for &'a Shared<VFat> {
     }
 
     fn create_file<P: AsRef<Path>>(self, _path: P) -> io::Result<Self::File> {
-        unimplemented!("read only file system")
+        // Skip this as this is a read only filesystem
+        Ok(())
     }
 
     fn create_dir<P>(self, _path: P, _parents: bool) -> io::Result<Self::Dir>
         where P: AsRef<Path>
     {
-        unimplemented!("read only file system")
+        // Skip this as this is a read only filesystem
+        Ok(())
     }
 
     fn rename<P, Q>(self, _from: P, _to: Q) -> io::Result<()>
         where P: AsRef<Path>, Q: AsRef<Path>
     {
-        unimplemented!("read only file system")
+        // Skip this as this is a read only filesystem
+        Ok(())
     }
 
     fn remove<P: AsRef<Path>>(self, _path: P, _children: bool) -> io::Result<()> {
-        unimplemented!("read only file system")
+        // Skip this as this is a read only filesystem
+        Ok(())
     }
 }

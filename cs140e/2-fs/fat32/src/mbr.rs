@@ -1,4 +1,4 @@
-use std::{fmt, io};
+use std::{mem, fmt, io};
 
 use traits::BlockDevice;
 
@@ -74,7 +74,7 @@ impl MasterBootRecord {
         for i in 0..4 {
             if mbr.partition_entries[i].indicator != 0x80
                 && mbr.partition_entries[i].indicator != 0x00 {
-                return Err(UnknownBootIndicator(i as u8))
+                return Err(Error::UnknownBootIndicator(i as u8))
             }
         }
 

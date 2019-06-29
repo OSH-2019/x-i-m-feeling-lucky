@@ -7,7 +7,7 @@ use traits;
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Date(u16);
 
-impl Data {
+impl Date {
     pub fn year(&self) -> usize {
         // bits 15-9 is year (minus 1980)
         ((self.0 >> 9) as usize & 0b1111111) + 1980
@@ -59,7 +59,7 @@ impl Attributes {
     const VOLUME_ID: u8 = 0x08;
     const DIRECTORY: u8 = 0x10;
     const ARCHIVE: u8 = 0x20;
-    const LFN: u8 = READ_ONLY | HIDDEN | SYSTEM | VOLUME_ID;
+    const LFN: u8 = Self::READ_ONLY | Self::HIDDEN | Self::SYSTEM | Self::VOLUME_ID;
 
     pub fn read_only(&self) -> bool {
         self.0 == Self::READ_ONLY
@@ -96,9 +96,9 @@ pub struct Timestamp {
 pub struct Metadata {
     // FIXME: Fill me in.
     attributes: Attributes,
-    create: Timestamp,
-    access: Timestamp,
-    modify: Timestamp,
+    created: Timestamp,
+    accessed: Timestamp,
+    modified: Timestamp,
 }
 
 // FIXME: Implement `traits::Timestamp` for `Timestamp`.
@@ -106,19 +106,19 @@ impl traits::Timestamp for Timestamp {
     fn year(&self) -> usize {
         self.date.year()
     }
-    fn month(&self) -> usize {
+    fn month(&self) -> u8 {
         self.date.month()
     }
-    fn day(&self) -> usize {
+    fn day(&self) -> u8 {
         self.date.day()
     }
-    fn hour(&self) -> usize {
+    fn hour(&self) -> u8 {
         self.time.hour()
     }
-    fn minute(&self) -> usize {
+    fn minute(&self) -> u8 {
         self.time.minute()
     }
-    fn second(&self) -> usize {
+    fn second(&self) -> u8 {
         self.time.second()
     }
 }
@@ -160,10 +160,9 @@ impl fmt::Display for Metadata {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("Metadata")
             .field("attributes", &self.attributes)
-            .field("create", &self.create)
-            .field("access", &self.access)
-            .field("modify", &self.modify)
+            .field("create", &self.created)
+            .field("access", &self.accessed)
+            .field("modify", &self.modified)
             .finish()
     }
-
 }
