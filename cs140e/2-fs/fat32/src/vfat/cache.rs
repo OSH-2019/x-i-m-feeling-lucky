@@ -1,25 +1,26 @@
 use std::{io, fmt};
 use std::collections::HashMap;
+use std::io::Write;
 
 use traits::BlockDevice;
 
 #[derive(Debug)]
 struct CacheEntry {
     data: Vec<u8>,
-    dirty: bool
+    dirty: bool,
 }
 
 pub struct Partition {
     /// The physical sector where the partition begins.
     pub start: u64,
     /// The size, in bytes, of a logical sector in the partition.
-    pub sector_size: u64
+    pub sector_size: u64,
 }
 
 pub struct CachedDevice {
     device: Box<BlockDevice>,
     cache: HashMap<u64, CacheEntry>,
-    partition: Partition
+    pub partition: Partition,
 }
 
 impl CachedDevice {
@@ -50,7 +51,7 @@ impl CachedDevice {
         CachedDevice {
             device: Box::new(device),
             cache: HashMap::new(),
-            partition
+            partition,
         }
     }
 
@@ -90,9 +91,8 @@ impl CachedDevice {
             }
 
             None => {
-                Err(())
+                Err(io::Error::new(io::ErrorKind::NotFound, "Not Found"))
             }
-
         }
     }
 
@@ -104,13 +104,15 @@ impl CachedDevice {
     /// Returns an error if there is an error reading the sector from the disk.
     pub fn get(&mut self, sector: u64) -> io::Result<&[u8]> {
         if !self.cache.contains_key(&sector) {
-            let (physical, factor) = self.virutal_to_physical(sector);
-            let mut buf = vec![0u8;(self.device.sector_size * factor) as usize];
+            let (physical, factor) = self.virtual_to_physical(sector);
+
+            let wtf_size = self.device.sector_size();
+            let mut buf = vec![0u8; (wtf_size * factor) as usize];
             for i in 0..factor {
-                self.device.read_sector(physical + i, &mut buf[(self.device.sector_size * i) as usize ..] )?;
+                self.device.read_sector(physical + i, &mut buf[(wtf_size * i) as usize..])?;
             }
 
-            self.cache.insert(&sector, CacheEntry{ data: buf, dirty: false});
+            self.cache.insert(sector, CacheEntry { data: buf, dirty: false });
         }
 
         Ok(self.cache.get(&sector).unwrap().data.as_slice())
@@ -121,12 +123,15 @@ impl CachedDevice {
 // `write_sector` methods should only read/write from/to cached sectors.
 
 impl BlockDevice for CachedDevice {
+    fn sector_size(&self) -> u64 {
+        self.partition.sector_size
+    }
 
-    fn read_sector(&mut self, n:u64, mut buf: &mut[u8]) -> io::Result<usize> {
+    fn read_sector(&mut self, n: u64, mut buf: &mut [u8]) -> io::Result<usize> {
         buf.write(self.get(n)?)
     }
 
-    fn write_sector(&mut self, n:u64, mut buf: &[u8]) -> io::Result<usize> {
+    fn write_sector(&mut self, n: u64, mut buf: &[u8]) -> io::Result<usize> {
         self.get_mut(n)?.write(buf)
     }
 }
@@ -140,3 +145,4 @@ impl fmt::Debug for CachedDevice {
             .finish()
     }
 }
+

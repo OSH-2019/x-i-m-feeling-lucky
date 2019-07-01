@@ -2,21 +2,38 @@ use std::ffi::OsStr;
 use std::char::decode_utf16;
 use std::borrow::Cow;
 use std::io;
+use std::str;
+use std::string::String;
 use std::vec::IntoIter;
 
+use util::VecExt;
+
 use traits;
+
 use vfat::{VFat, Shared, File, Cluster, Entry};
 use vfat::{Metadata, Attributes, Timestamp, Time, Date};
 
 #[derive(Debug)]
 pub struct Dir {
     pub name: String,
-//    pub lfn: String,
+    //    pub lfn: String,
     pub first_cluster: Cluster,
     pub vfat: Shared<VFat>,
     pub metadata: Metadata,
 
 }
+
+impl Dir {
+    pub fn root(vfat: Shared<VFat>) -> Dir {
+        Dir {
+            name: String::from("/"),
+            first_cluster: vfat.borrow().root_dir_cluster,
+            vfat: vfat.clone(),
+            metadata: Metadata::default(),
+        }
+    }
+}
+
 
 #[repr(C, packed)]
 #[derive(Copy, Clone)]
@@ -28,7 +45,6 @@ pub struct VFatRegularDirEntry {
     creation_time_in_tenths: u8,
     create_time: Time,
     create_date: Date,
-    access_time: Time,
     access_data: Date,
     first_cluster_number_high: u16,
     modify_time: Time,
@@ -38,17 +54,39 @@ pub struct VFatRegularDirEntry {
 
 }
 
+impl VFatRegularDirEntry {
+    pub fn metadata(&self) -> Metadata {
+        Metadata {
+            attributes: self.attributes,
+
+            created: Timestamp {
+                date: self.create_date,
+                time: self.create_time,
+            },
+            accessed: Timestamp {
+                date: self.access_data,
+                time: Time::new(),
+            },
+            modified: Timestamp {
+                date: self.modify_data,
+                time: self.modify_time,
+            },
+        }
+    }
+}
+
+
 #[repr(C, packed)]
 #[derive(Copy, Clone)]
 pub struct VFatLfnDirEntry {
     sequence_number: u8,
-    name_characters: [u8; 10],
+    name_characters: [u16; 5],
     attributes: Attributes,
     lfn_type: u8,
     checksum: u8,
-    name_characters_second: [u8; 12],
+    name_characters_second: [u16; 6],
     always_zero: u16,
-    name_characters_third: [u8; 4],
+    name_characters_third: [u16; 2],
 }
 
 #[repr(C, packed)]
@@ -78,6 +116,7 @@ impl Dir {
     /// If `name` contains invalid UTF-8 characters, an error of `InvalidInput`
     /// is returned.
     pub fn find<P: AsRef<OsStr>>(&self, name: P) -> io::Result<Entry> {
+        use traits::{Dir, Entry};
 //        let name_str = match name.as_ref().to_str() {
 //            Some(x) => {
 //                x
@@ -85,6 +124,7 @@ impl Dir {
 //            _ => {
 //                return Err(io::Error::new(io::ErrorKind::InvalidInput, "InvalidInput"));
 //            }
+
         let name_str = name.as_ref().to_str().ok_or(io::Error::new(io::ErrorKind::InvalidInput, "Invalid Input"))?;
 
         self.entries()?.find(|item| {
@@ -92,6 +132,7 @@ impl Dir {
         }).ok_or(io::Error::new(io::ErrorKind::NotFound, "Not Found"))
     }
 }
+
 
 
 pub struct VFatIterator {
@@ -108,12 +149,15 @@ impl Iterator for VFatIterator {
 
         for ref entry in self.entries.by_ref() {
             let unknown_entry = unsafe { entry.unknown };
-            match unknown_entry.sequence_number {
+            match unknown_entry.info {
                 0x00 => {
-                    None
+                    return None;
                 }
                 0xE5 => {
                     continue;
+                }
+                _ => {
+
                 }
             }
 
@@ -155,7 +199,7 @@ impl Iterator for VFatIterator {
                         metadata: entry.metadata(),
                     })
                 } else {
-                    Entry::File(File::new(name, self.vfat.clone(), first_cluster, entry.metadata(), entry.size_in_bytes))
+                    Entry::File(File::new(name, first_cluster, self.vfat.clone(), entry.metadata(), entry.size_in_bytes))
                 });
             }
         }

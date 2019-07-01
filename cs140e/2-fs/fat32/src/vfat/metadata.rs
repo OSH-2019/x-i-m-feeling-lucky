@@ -29,6 +29,10 @@ impl Date {
 pub struct Time(u16);
 
 impl Time {
+    pub fn new() -> Time {
+        Time(0)
+    }
+
     pub fn hour(&self) -> u8 {
         // bits 15-9 is year (minus 1980)
         (self.0 >> 11) as u8 & 0b11111
@@ -61,28 +65,55 @@ impl Attributes {
     const ARCHIVE: u8 = 0x20;
     const LFN: u8 = Self::READ_ONLY | Self::HIDDEN | Self::SYSTEM | Self::VOLUME_ID;
 
-    pub fn read_only(&self) -> bool {
-        self.0 == Self::READ_ONLY
-    }
-    pub fn hidden(&self) -> bool {
-        self.0 == Self::HIDDEN
-    }
-    pub fn system(&self) -> bool {
-        self.0 == Self::SYSTEM
-    }
-    pub fn volume_id(&self) -> bool {
-        self.0 == Self::VOLUME_ID
-    }
-    pub fn directory(&self) -> bool {
-        self.0 == Self::DIRECTORY
-    }
-    pub fn archive(&self) -> bool {
-        self.0 == Self::ARCHIVE
-    }
+    //    pub fn read_only(&self) -> bool {
+//        self.0 == Self::READ_ONLY
+//    }
+//    pub fn hidden(&self) -> bool {
+//        self.0 == Self::HIDDEN
+//    }
+//    pub fn system(&self) -> bool {
+//        self.0 == Self::SYSTEM
+//    }
+//    pub fn volume_id(&self) -> bool {
+//        self.0 == Self::VOLUME_ID
+//    }
+//    pub fn directory(&self) -> bool {
+//        self.0 == Self::DIRECTORY
+//    }
+//    pub fn archive(&self) -> bool {
+//        self.0 == Self::ARCHIVE
+//    }
+
     pub fn lfn(&self) -> bool {
         self.0 == Self::LFN
     }
+
+
+    pub fn read_only(&self) -> bool {
+        (self.0 & Self::READ_ONLY) != 0
+    }
+
+    pub fn hidden(&self) -> bool {
+        (self.0 & Self::HIDDEN) != 0
+    }
+
+    pub fn system(&self) -> bool {
+        (self.0 & Self::SYSTEM) != 0
+    }
+
+    pub fn volume_id(&self) -> bool {
+        (self.0 & Self::VOLUME_ID) != 0
+    }
+
+    pub fn directory(&self) -> bool {
+        (self.0 & Self::DIRECTORY) != 0
+    }
+
+    pub fn archive(&self) -> bool {
+        (self.0 & Self::ARCHIVE) != 0
+    }
 }
+
 
 /// A structure containing a date and time.
 #[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
@@ -92,13 +123,13 @@ pub struct Timestamp {
 }
 
 /// Metadata for a directory entry.
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct Metadata {
     // FIXME: Fill me in.
-    attributes: Attributes,
-    created: Timestamp,
-    accessed: Timestamp,
-    modified: Timestamp,
+    pub attributes: Attributes,
+    pub created: Timestamp,
+    pub accessed: Timestamp,
+    pub modified: Timestamp,
 }
 
 // FIXME: Implement `traits::Timestamp` for `Timestamp`.
@@ -125,26 +156,39 @@ impl traits::Timestamp for Timestamp {
 
 // FIXME: Implement `traits::Metadata` for `Metadata`.
 impl traits::Metadata for Metadata {
+    type Timestamp = Timestamp;
+
     fn read_only(&self) -> bool {
         self.attributes.read_only()
     }
     fn hidden(&self) -> bool {
         self.attributes.hidden()
     }
-    fn system(&self) -> bool {
-        self.attributes.system()
+    //    fn system(&self) -> bool {
+//        self.attributes.system()
+//    }
+//    fn volume_id(&self) -> bool {
+//        self.attributes.volume_id()
+//    }
+//    fn directory(&self) -> bool {
+//        self.attributes.directory()
+//    }
+//    fn archive(&self) -> bool {
+//        self.attributes.archive()
+//    }
+//    fn lfn(&self) -> bool {
+//        self.attributes.lfn()
+
+    fn created(&self) -> Self::Timestamp {
+        self.created
     }
-    fn volume_id(&self) -> bool {
-        self.attributes.volume_id()
+
+    fn accessed(&self) -> Self::Timestamp {
+        self.accessed
     }
-    fn directory(&self) -> bool {
-        self.attributes.directory()
-    }
-    fn archive(&self) -> bool {
-        self.attributes.archive()
-    }
-    fn lfn(&self) -> bool {
-        self.attributes.lfn()
+
+    fn modified(&self) -> Self::Timestamp {
+        self.modified
     }
 }
 

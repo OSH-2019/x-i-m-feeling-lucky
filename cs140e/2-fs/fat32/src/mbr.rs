@@ -5,10 +5,10 @@ use traits::BlockDevice;
 const MBR_SIZE: usize = 512;
 
 #[repr(C, packed)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct CHS {
-    head: u8,
-    sector_and_cylinder: [u8;2]
+    pub head: u8,
+    pub sector_and_cylinder: [u8;2]
 }
 
 #[repr(C)]
@@ -24,21 +24,21 @@ impl PartitionType {
 #[repr(C, packed)]
 #[derive(Debug, Clone)]
 pub struct PartitionEntry {
-    indicator: u8,
-    starting_chs: CHS,
-    partition_type: PartitionType,
-    ending_chs: CHS,
-    relative_sector: [u8; 4],
-    total_sectors: [u8; 4]
+    pub indicator: u8,
+    pub starting_chs: CHS,
+    pub partition_type: PartitionType,
+    pub ending_chs: CHS,
+    pub relative_sector: u32,
+    pub total_sectors: u32
 }
 
 /// The master boot record (MBR).
 #[repr(C, packed)]
 pub struct MasterBootRecord {
-    bootstrap: [u8; 436],
-    disk_id: [u8; 10],
-    partition_entries: [PartitionEntry; 4],
-    signature: [u8; 2]
+    pub bootstrap: [u8; 436],
+    pub disk_id: [u8; 10],
+    pub partition_entries: [PartitionEntry; 4],
+    pub signature: [u8; 2]
 }
 
 #[derive(Debug)]
@@ -63,7 +63,7 @@ impl MasterBootRecord {
     pub fn from<T: BlockDevice>(mut device: T) -> Result<MasterBootRecord, Error> {
 
         let mut buf = [0u8; MBR_SIZE];
-        let bytes_read = device.read_sector(0, &buf);
+        let bytes_read = device.read_sector(0, &mut buf);
 
         let mbr: MasterBootRecord = unsafe { mem::transmute(buf)};
 
@@ -80,12 +80,17 @@ impl MasterBootRecord {
 
         Ok(mbr)
     }
+
+    pub fn first_fat32(&self) -> Option<&PartitionEntry> {
+        self.partition_entries.iter()
+            .find(|part| part.partition_type.is_fat() )
+    }
 }
 
 impl fmt::Debug for MasterBootRecord {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("MasterBootRecord")
-            .field("bootstrap", &self.bootstrap)
+            .field("bootstrap", &"Not available for print.")
             .field("disk_id", &self.disk_id)
             .field("partition_entry_0", &self.partition_entries[0])
             .field("partition_entry_1", &self.partition_entries[1])

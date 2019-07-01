@@ -1,42 +1,41 @@
-use std::{fmt,mem};
+use std::{fmt, mem, io};
 
 use traits::BlockDevice;
 use vfat::Error;
 
-const EBPB_SIZE: usize = 512;
-
 #[repr(C, packed)]
 pub struct BiosParameterBlock {
-    disassemble_to_jump: [u8; 3],
-    oem_identifier: [u8; 8],
-    bytes_per_sector: u16,
-    sectors_per_cluster: u8,
-    reserved_sectors: u16,
-    num_of_fat: u8,
-    max_of_dir_entries: u16,
-    total_logical_sectors: u16,
-    media_descriptor_type: u8,
-    sectors_per_fat: u16,
-    sectors_per_track: u16,
-    heads_or_sides:  u16,
-    hidden_sectors: u32,
-    total_logical_sectors_assist: u32,
+    pub disassemble_to_jump: [u8; 3],
+    pub oem_identifier: [u8; 8],
+    pub bytes_per_sector: u16,
+    pub sectors_per_cluster: u8,
+    pub reserved_sectors: u16,
+    pub num_of_fat: u8,
+    pub max_of_dir_entries: u16,
+    pub total_logical_sectors: u16,
+    pub media_descriptor_type: u8,
+    pub sectors_per_fat: u16,
+    pub sectors_per_track: u16,
+    pub heads_or_sides: u16,
+    pub hidden_sectors: u32,
+    pub total_logical_sectors_assist: u32,
 
     // EBPB
-    sectors_per_fat_assist: u32,
-    flags: u16,
-    fat_version_number: u16,
-    root_dir_cluster_number: u32,
-    fsinfo_sector_number: u16,
-    backup_boot_sector_number: u16,
-    driver_number: u8,
-    flags_in_windows_nt: u8,
-    signature: u8,
-    volume_id_serial_number: u32,
-    volume_label_string: [u8; 11],
-    system_identifier_string: [u8; 8],
-    boot_code: [u8; 420],
-    bootable_signature: u16
+    pub sectors_per_fat_assist: u32,
+    pub flags: u16,
+    pub fat_version_number: u16,
+    pub root_dir_cluster_number: u32,
+    pub fsinfo_sector_number: u16,
+    pub backup_boot_sector_number: u16,
+    reserved_and_should_be_zero: [u8; 12],
+    pub driver_number: u8,
+    pub flags_in_windows_nt: u8,
+    pub signature: u8,
+    pub volume_id_serial_number: u32,
+    pub volume_label_string: [u8; 11],
+    pub system_identifier_string: [u8; 8],
+    pub boot_code: [u8; 420],
+    pub bootable_signature: u16,
 }
 
 impl BiosParameterBlock {
@@ -46,21 +45,30 @@ impl BiosParameterBlock {
     /// # Errors
     ///
     /// If the EBPB signature is invalid, returns an error of `BadSignature`.
-    pub fn from<T: BlockDevice>(
-        mut device: T,
-        sector: u64
-    ) -> Result<BiosParameterBlock, Error> {
-        let mut buf = [0u8; EBPB_SIZE];
-        let bytes_read = device.read_sector(0, &buf);
+    pub fn from<T: BlockDevice>(mut device: T, sector: u64)
+                                -> Result<BiosParameterBlock, Error> {
+        let mut buf = [0u8; mem::size_of::<BiosParameterBlock>()];
+        let bytes_read = device.read_sector(sector, &mut buf);
 
-        let ebpb: BiosParameterBlock = unsafe { mem::transmute(buf)};
-        if ebpb.signature != [0xAA, 0x55] {
+        let ebpb: BiosParameterBlock = unsafe { mem::transmute(buf) };
+//        let ebpb = Self::modify_byte_order(ebpb);
+
+        if ebpb.bootable_signature != 0xAA55 {
             return Err(Error::BadSignature);
         }
 
         Ok(ebpb)
     }
+
+    pub fn sectors_per_fat(&self) -> u32 {
+        if self.sectors_per_fat != 0 {
+            self.sectors_per_fat as u32
+        } else {
+            self.sectors_per_fat_assist
+        }
+    }
 }
+
 
 impl fmt::Debug for BiosParameterBlock {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -92,7 +100,7 @@ impl fmt::Debug for BiosParameterBlock {
             .field("volume_id_serial_number", &self.volume_id_serial_number)
             .field("volume_label_string", &self.volume_label_string)
             .field("system_identifier_string", &self.system_identifier_string)
-            .field("boot_code", &self.boot_code)
+//            .field("boot_code", &self.boot_code)
             .field("bootable_signature", &self.bootable_signature)
             .finish()
     }

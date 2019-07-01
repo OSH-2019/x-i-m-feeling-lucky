@@ -19,8 +19,7 @@ impl File {
                first_cluster: Cluster,
                vfat: Shared<VFat>,
                metadata: Metadata,
-               size: u32,
-               ptr: u32) -> File {
+               size: u32) -> File {
         File {
             name,
             first_cluster,
@@ -36,11 +35,11 @@ impl File {
 
 impl io::Read for File {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let can_read = min(buf.len(), self.size - self.ptr);
+        let can_read = min(buf.len(), (self.size as usize - self.ptr as usize));
         let mut data = Vec::new();
         let _read = self.vfat.borrow_mut().read_chain(self.first_cluster, &mut data)?;
-        buf[..can_read as usize].copy_from_slice(&data[self.ptr as usize..(self.ptr + can_read) as usize]);
-        self.ptr += can_read;
+        buf[..can_read as usize].copy_from_slice(&data[self.ptr as usize..(self.ptr as usize + can_read as usize)]);
+        self.ptr += can_read as u32;
         Ok(can_read)
     }
 }
@@ -63,24 +62,24 @@ impl io::Seek for File {
     fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
         match pos {
             SeekFrom::Start(offset) => {
-                if offset > self.size() {
+                if offset as u32 > self.size {
                     Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid Position"))
                 } else {
-                    self.ptr = offset;
+                    self.ptr = offset as u32;
                     Ok(self.ptr as u64)
                 }
             }
             SeekFrom::End(offset) => {
-                if offset > 0 || self.size() + offset < 0 {
+                if offset as i64 > 0 || (self.size as i64 + offset as i64) < 0 {
                     Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid Position"))
                 } else {
-                    self.ptr = self.size() + offset;
+                    self.ptr = (self.size as i64 + offset as i64) as u32;
                     Ok(self.ptr as u64)
                 }
             }
             SeekFrom::Current(offset) => {
-                let new_ptr = self.ptr + offset;
-                if new_ptr >= self.size() || new_ptr < 0 {
+                let new_ptr: i64 = self.ptr as i64 + offset as i64;
+                if new_ptr >= self.size as i64 || new_ptr < 0 {
                     Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid Position"))
                 } else {
                     Ok(new_ptr as u64)
@@ -91,15 +90,14 @@ impl io::Seek for File {
 }
 
 impl io::Write for File {
-    fn write(&mut self, buf: &[u8]) -> io::Result<()> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         // Skip this as this is a read only filesystem
-        Ok(())
+        Ok(0)
     }
 
     fn flush(&mut self) -> io::Result<()> {
         // Skip this as this is a read only filesystem
         Ok(())
-
     }
 }
 
