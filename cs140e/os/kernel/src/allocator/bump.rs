@@ -42,7 +42,8 @@ impl Allocator {
     /// size or alignment constraints (`AllocError::Unsupported`).
     pub fn alloc(&mut self, layout: Layout) -> Result<*mut u8, AllocErr> {
         //unimplemented!("bump allocation")
-        if(layout.size() <= 0 || !layout.align().is_power_of_two()) {return Err(AllocErr::Unsupported);}
+        if (layout.size() <= 0 || !layout.align().is_power_of_two()) {return Err(AllocErr::Unsupported);}
+
         let newaddr = align_up(self.current,layout.align());
         let newcurrent = newaddr.saturating_add(layout.size());
         if newcurrent < self.end && newcurrent > newaddr {
