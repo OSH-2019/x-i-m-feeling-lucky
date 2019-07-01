@@ -7,7 +7,7 @@ mod imp;
 #[cfg(test)]
 mod tests;
 
-use alloc::heap::{Alloc, AllocErr, Layout};
+use alloc::alloc::{Alloc, AllocErr, Layout};
 use mutex::Mutex;
 use pi::atags::Atags;
 use std::cmp::max;

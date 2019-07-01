@@ -1,5 +1,5 @@
 use std::fmt;
-use alloc::heap::{AllocErr, Layout};
+use alloc::alloc::{AllocErr, Layout};
 use std::cmp::{min, max};
 use std::mem::size_of;
 

@@ -59,7 +59,7 @@ mod allocator {
     #[allow(dead_code)] mod bump;
     #[allow(dead_code)] mod bin;
 
-    use alloc::allocator::{AllocErr, Layout};
+    use alloc::alloc::{AllocErr, Layout};
     use alloc::raw_vec::RawVec;
 
     macro test_allocators {
