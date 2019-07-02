@@ -1,7 +1,7 @@
 pub mod sd;
 
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use fat32::vfat::{self, Shared, VFat};
 pub use fat32::traits;
@@ -67,5 +67,9 @@ impl<'a> traits::FileSystem for &'a FileSystem {
 
     fn remove<P: AsRef<Path>>(self, path: P, children: bool) -> io::Result<()> {
         self.get_vfat()?.remove(path, children)
+    }
+
+    fn canonicalize<P: AsRef<Path>>(self, path: P) -> io::Result<PathBuf> {
+        self.get_vfat()?.canonicalize(path)
     }
 }

@@ -1,8 +1,6 @@
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::mem;
-use std::mem::size_of;
-use std::cmp::min;
 use std::io::Write;
 
 use util::SliceExt;
@@ -197,5 +195,9 @@ impl<'a> FileSystem for &'a Shared<VFat> {
     fn remove<P: AsRef<Path>>(self, _path: P, _children: bool) -> io::Result<()> {
         // Skip this as this is a read only filesystem
         panic!("Dummy")
+    }
+
+    fn canonicalize<P: AsRef<Path>>(self, path: P) -> io::Result<PathBuf> {
+        unimplemented!("shouldn't use it");
     }
 }

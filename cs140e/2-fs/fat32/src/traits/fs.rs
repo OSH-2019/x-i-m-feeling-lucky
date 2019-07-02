@@ -1,5 +1,5 @@
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use traits::Metadata;
 
@@ -184,4 +184,6 @@ pub trait FileSystem: Sized {
     ///
     /// All other error values are implementation defined.
     fn remove<P: AsRef<Path>>(self, path: P, children: bool) -> io::Result<()>;
+
+    fn canonicalize<P :AsRef<Path>>(self, path: P) -> io::Result<PathBuf>;
 }

@@ -1,17 +1,21 @@
-use stack_vec::StackVec;
-use std::str;
 use console::{kprint, kprintln, CONSOLE};
+use fat32::traits::{Dir, FileSystem, Entry, File, Metadata};
+use stack_vec::StackVec;
+use std::io::Read;
+use std::path::PathBuf;
+use std::str;
+use FILE_SYSTEM;
 
 /// Error type for `Command` parse failures.
 #[derive(Debug)]
 enum Error {
     Empty,
-    TooManyArgs
+    TooManyArgs,
 }
 
 /// A structure representing a single shell command.
 struct Command<'a> {
-    args: StackVec<'a, &'a str>
+    args: StackVec<'a, &'a str>,
 }
 
 impl<'a> Command<'a> {
@@ -40,19 +44,10 @@ impl<'a> Command<'a> {
         self.args[0]
     }
 
+    #[allow(dead_code)]
     pub fn execute(&self) {
-        match self.path() {
-            "echo" => {
-                let length = self.args.len();
-                for i in 1..(length-1) {
-                    kprint!("{} ", self.args.as_slice()[i]);
-                }
-                kprintln!("{}", self.args.as_slice()[length-1]);
-            }
-            _ => {
-                kprintln!("unknown command: {}", self.path());
-            }
-        }
+        // unused function
+        unimplemented!();
     }
 }
 
@@ -62,28 +57,33 @@ const BS: u8 = 0x08; //backspace
 const DE: u8 = 0x7F; //delete
 const BE: u8 = 0x07; //ring the bell
 /// Read a command from users input
-fn readcmd(buf: &mut [u8]) -> &str { 
+fn readcmd(buf: &mut [u8]) -> &str {
     let mut len = 0;
-    loop { 
+    loop {
         let byte = CONSOLE.lock().read_byte();
         match byte {
-            GR | GN => {                                    //finish input
+            GR | GN => {
+                //finish input
                 kprintln!("");
                 break;
             }
-            BS | DE if len > 0 => {                         //delete a char
+            BS | DE if len > 0 => {
+                //delete a char
                 kprint!("{} {}", BS as char, BS as char);
                 len -= 1;
             }
-            _ if len == buf.len() => {                        //ring the bell if overflow
+            _ if len == buf.len() => {
+                //ring the bell if overflow
                 kprint!("{}", BE as char);
             }
-            byte @ b' ' ... b'~' => {                       //normal char
+            byte @ b' '...b'~' => {
+                //normal char
                 kprint!("{}", byte as char);
                 buf[len] = byte;
                 len += 1;
             }
-            _ => {                                             //unrecognized char
+            _ => {
+                //unrecognized char
                 kprint!("{}", BE as char);
             }
         }
@@ -91,18 +91,139 @@ fn readcmd(buf: &mut [u8]) -> &str {
     str::from_utf8(&buf[..len]).unwrap()
 }
 
-
 const MAXBUF: usize = 512;
 const MAXARG: usize = 64;
 /// Starts a shell using `prefix` as the prefix for each line. This function
 /// never returns: it is perpetually in a shell loop.
 pub fn shell(prefix: &str) -> ! {
+    let mut cwd = PathBuf::from("/");
+
     loop {
-        kprint!("{} ", prefix);
+        kprint!("({}) {}", cwd.display(), prefix);
         match Command::parse(readcmd(&mut [0u8; MAXBUF]), &mut [""; MAXARG]) {
-            Ok(cmd) => cmd.execute(),
+            Ok(cmd) => match cmd.path() {
+                "echo" => command_echo(&cmd),
+                "pwd" => command_pwd(&cmd, &cwd),
+                "cd" => command_cd(&cmd, &mut cwd),
+                "ls" => command_ls(&cmd, &cwd),
+                "cat" => command_cat(&cmd, &cwd),
+                _ => {
+                    kprintln!("unknown command: {}", cmd.path());
+                }
+            },
             Err(Error::TooManyArgs) => kprintln!("error: too many arguments"),
-            Err(Error::Empty) => { }
+            Err(Error::Empty) => {}
+        }
+    }
+}
+
+fn command_echo(cmd: &Command) {
+    let length = cmd.args.len();
+    for i in 1..(length - 1) {
+        kprint!("{} ", cmd.args.as_slice()[i]);
+    }
+    kprintln!("{}", cmd.args.as_slice()[length - 1]);
+}
+
+fn command_pwd(_cmd: &Command, cwd: &PathBuf) {
+    kprintln!("{}", cwd.display());
+}
+
+fn command_cd(cmd: &Command, cwd: &mut PathBuf) {
+    if cmd.args.len() != 2 {
+        kprintln!("Wrong syntax for cd");
+        return;
+    }
+    let tmp = cwd.clone();
+    *cwd = FILE_SYSTEM
+        .canonicalize(tmp.join(cmd.args[1]))
+        .unwrap_or(tmp);
+}
+
+fn command_ls(cmd: &Command, cwd: &PathBuf) {
+    let (cfg_all, path) = match cmd.args.len() {
+        1 => (false, PathBuf::from(cwd)),
+        2 => {
+            if cmd.args[1] == "-a" {
+                (true, PathBuf::from(cwd))
+            } else {
+                (false, PathBuf::from(cwd.join(cmd.args[1])))
+            }
+        }
+        3 => {
+            if cmd.args[1] == "-a" {
+                (true, PathBuf::from(cmd.args[2]))
+            } else if cmd.args[2] == "-a" {
+                (true, PathBuf::from(cwd.join(cmd.args[1])))
+            } else {
+                kprintln!("Wrong syntax for ls");
+                return;
+            }
+        }
+        _ => {
+            kprintln!("Wrong syntax for ls");
+            return;
+        }
+    };
+
+    let dir = match FILE_SYSTEM.open_dir(path) {
+        Ok(thing) => thing,
+        Err(e) => {
+            kprintln!("Error opening dir: {}", e);
+            return;
+        }
+    };
+
+    match dir.entries() {
+        Ok(entries) => {
+            for entry in entries {
+                let metadata = entry.metadata();
+                if !cfg_all && metadata.hidden() {
+                    continue;
+                }
+                kprint!(
+                    "{}{}{}{}{}{}\t{:?}\t{:?}\t",
+                    if metadata.read_only() { 'r' } else { 'w' },
+                    if metadata.hidden() { 'h' } else { 'v' },
+                    '-',
+                    '-',
+                    if entry.is_dir() { 'd' } else { 'f' },
+                    '-',
+                    metadata.created(),
+                    metadata.modified()
+                );
+                if entry.is_dir() {
+                    kprintln!("{}\t{}/", 0, entry.name())
+                } else {
+                    kprintln!("{}\t{}", entry.as_file().unwrap().size(), entry.name());
+                }
+            }
+        }
+        Err(e) => kprintln!("Error listing dir: {}", e),
+    }
+}
+
+fn command_cat(cmd: &Command, cwd: &PathBuf) {
+    for path in &cmd.args[1..] {
+        let mut file = match FILE_SYSTEM.open_file(cwd.join(path)) {
+            Ok(thing) => thing,
+            Err(e) => {
+                kprintln!("Error opening file: {}", e);
+                return;
+            }
+        };
+
+        let mut content = Vec::new();
+        match file.read_to_end(&mut content) {
+            Ok(_) => {
+                kprint!(
+                    "{}",
+                    str::from_utf8(&content).unwrap_or("Error: file contains invalid UTF-8")
+                );
+            }
+            Err(e) => {
+                kprintln!("Error reading file: {}", e);
+            }
         }
     }
 }
