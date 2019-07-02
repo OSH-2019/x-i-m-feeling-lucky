@@ -25,7 +25,7 @@ impl Atag {
         }
         else {
             let next: &Atag = unsafe {
-                &*((self as *const Atag as *const u32).add(self.dwards) as *const Atag)
+                &*((self as *const Atag as *const u32).add(self.dwords as usize) as *const Atag)
             };
 
             Some(next)

@@ -1,4 +1,5 @@
 use atags::raw;
+use core::{slice, str};
 
 pub use atags::raw::{Core, Mem};
 
@@ -9,7 +10,7 @@ pub enum Atag {
     Mem(raw::Mem),
     Cmd(&'static str),
     Unknown(u32),
-    None
+    None,
 }
 
 impl Atag {
@@ -50,21 +51,20 @@ impl<'a> From<&'a raw::Atag> for Atag {
         unsafe {
             match (atag.tag, &atag.kind) {
                 (raw::Atag::CORE, &raw::Kind { core }) => Atag::Core(core),
-                (raw::Atag::MEM, &raw::Kind { mem }) => Atag::Core(mem),
+                (raw::Atag::MEM, &raw::Kind { mem }) => Atag::Mem(mem),
                 (raw::Atag::CMDLINE, &raw::Kind { ref cmd }) => {
-                    let start :*const u8= cmd.cmd as *const u8;
-                    let mut end = start;
+                    let mut p: *const u8 = cmd.cmd as *const u8;
+                    let mut size: usize = 0;
                     loop {
-                        if *end == '\0' as u8 {
+                        if *p == '\0' as u8 {
                             break;
-                        }
-                        else {
-                            end = end.add(1);
+                        } else {
+                            p = p.add(1);
+                            size += 1;
                         }
                     }
-                    let size: usize = end - start;
-                    Atag::Cmd(str::from_utf8_unchecked(slice::from_raw_parts(start, size)))
-                },
+                    Atag::Cmd(str::from_utf8_unchecked(slice::from_raw_parts(p, size)))
+                }
                 (raw::Atag::NONE, _) => Atag::None,
                 (id, _) => Atag::Unknown(id),
             }

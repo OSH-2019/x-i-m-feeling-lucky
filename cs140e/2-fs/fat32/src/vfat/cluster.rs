@@ -11,8 +11,4 @@ impl Cluster {
     pub fn cluster_index(&self) -> usize {
         self.0 as usize
     }
-
-    pub fn cluster_offset(&self) -> Option<u32> {
-        self.0.checked_sub(2)
-    }
 }

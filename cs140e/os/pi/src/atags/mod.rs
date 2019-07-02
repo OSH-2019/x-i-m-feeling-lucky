@@ -24,7 +24,7 @@ impl Iterator for Atags {
     type Item = Atag;
 
     fn next(&mut self) -> Option<Atag> {
-        match self.ptr.next {
+        match self.ptr.next() {
             Some(next) => {
                 self.ptr = next;
                 Some(Atag::from(next))
