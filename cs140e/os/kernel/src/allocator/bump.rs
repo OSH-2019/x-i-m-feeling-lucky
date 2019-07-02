@@ -1,4 +1,4 @@
-use alloc::alloc::{AllocErr, Layout};
+use alloc::heap::{AllocErr, Layout};
 
 use allocator::util::*;
 
@@ -42,7 +42,7 @@ impl Allocator {
     /// size or alignment constraints (`AllocError::Unsupported`).
     pub fn alloc(&mut self, layout: Layout) -> Result<*mut u8, AllocErr> {
         //unimplemented!("bump allocation")
-        if layout.size() <= 0 || !layout.align().is_power_of_two() {return Err(AllocErr::Unsupported);}
+        if layout.size() <= 0 || !layout.align().is_power_of_two() {return Err(AllocErr::Unsupported{ details: "Unsupported"});}
 
         let newaddr = align_up(self.current,layout.align());
         let newcurrent = newaddr.saturating_add(layout.size());
@@ -51,7 +51,7 @@ impl Allocator {
             Ok(newaddr as *mut u8)
         }
         else{
-            Err(AllocErr::Exhausted)
+            Err(AllocErr::Exhausted{request: layout})
         }
     }
 

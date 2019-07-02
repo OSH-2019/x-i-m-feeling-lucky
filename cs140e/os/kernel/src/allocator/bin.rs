@@ -1,5 +1,5 @@
 use std::fmt;
-use alloc::alloc::{AllocErr, Layout};
+use alloc::heap::{AllocErr, Layout};
 use std::cmp::{min, max};
 use std::mem::size_of;
 
@@ -28,19 +28,19 @@ impl Allocator {
 		//initialize the members.
         let mut current = start;
 		let mut total = 0;
-        let mut list = [LinkedList::new(),BIN_SIZE];
+        let mut list = [LinkedList::new(); BIN_SIZE];
 		
 		//construct the free-space list.
 		while current + MIN_SIZE <= end {
 			//decide the size of chunk.
-			let size = min((end - start).next_power_of_two() >> 2, 
-							1 << start.trailing_zeros());
+			let size = min((end - current).next_power_of_two() >> 2, 
+							1 << current.trailing_zeros());
 			
 			//push the chunk to list and renew the members
 			unsafe {
-				list[size.trailing_zeros() as usize].push(start as *mut usize);
+				list[size.trailing_zeros() as usize].push(current as *mut usize);
 			}
-			start += size;
+			current += size;
 			total += size;
 		}
 		
@@ -74,9 +74,8 @@ impl Allocator {
     /// size or alignment constraints (`AllocError::Unsupported`).
     pub fn alloc(&mut self, layout: Layout) -> Result<*mut u8, AllocErr> {
 		//error demand handling
-		if !layout.align.is_power_of_two || layout.size() <= 0 {
-			return Err(AllocErr::Unsupported {
-				details: "unsupported demand"});
+		if !layout.align().is_power_of_two() || layout.size() <= 0 {
+			return Err(AllocErr::Unsupported{ details: "Unsupported"});
 		}
 		
 		//decide allocating size
@@ -85,23 +84,22 @@ impl Allocator {
 		let index = size.trailing_zeros();
 		
 		//allocate chunk and adjust the list
-		for i in index..self.list.len() {
-			if self.list[i].is_empty() { continue }
-			let start = self.list[i].pop().unwrap();
+		for i in index..self.list.len() as u32 {
+			if self.list[i as usize].is_empty() { continue }
+			let start = self.list[i as usize].pop().unwrap();
 			//handle the fragments， using buddy system like linux
 			for j in index..i {
 				unsafe {
 					let buddy = start.add(1 << j) as *mut usize;
-					self.list[j].push(buddy);
+					self.list[j as usize].push(buddy);
 				}
 			}
 			//return the start address
-			return Ok(start);
+			return Ok(start as *mut u8);
 		}
 		
 		//cannot find proper chunk, the memory is exhausted
-		return Err(AllocErr::Exhausted{
-			details: "memory runs out"});
+		return Err(AllocErr::Exhausted{ request: layout});
     }
 
     /// Deallocates the memory referenced by `ptr`.
@@ -125,12 +123,12 @@ impl Allocator {
 
 		//deallocate the chunk and trying to merge chunks according to buddy system strategy
 		let mut addr = ptr as usize;
-		for i in index..self.list.len() {
+		for i in index..self.list.len() as u32 {
 			let mut flag = false;
 			let buddy = addr ^ (1 << i);
 			
 			//try to find the buddy chunk
-			for node in self.list[i].iter_mut() {
+			for node in self.list[i as usize].iter_mut() {
 				if node.value() as usize == addr {
 					//find the buddy chunk, go to the next list
 					node.pop();
@@ -143,7 +141,7 @@ impl Allocator {
 			//cannot find the buddy, just push that chunk
 			if !flag {
 				unsafe {
-					self.list[i].push(addr as *mut usize);
+					self.list[i as usize].push(addr as *mut usize);
 				}
 			}
 		}

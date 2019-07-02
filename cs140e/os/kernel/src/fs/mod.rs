@@ -16,7 +16,7 @@ impl FileSystem {
     ///
     /// The file system must be initialized by calling `initialize()` before the
     /// first memory allocation. Failure to do will result in panics.
-    pub fn uninitialized() -> Self {
+    pub const fn uninitialized() -> Self {  // add const
         FileSystem(Mutex::new(None))
     }
 
@@ -27,7 +27,7 @@ impl FileSystem {
     /// Panics if the underlying disk or file sytem failed to initialize.
     pub fn initialize(&self) {
         //unimplemented!("FileSystem::initialize()")
-        *self.0.lock() = Some(VFat::from(Sd::new()?)?);
+        *self.0.lock() = Some(VFat::from(Sd::new().unwrap()).unwrap());
     }
 
     fn get_vfat(&self) -> io::Result<Shared<VFat>> {

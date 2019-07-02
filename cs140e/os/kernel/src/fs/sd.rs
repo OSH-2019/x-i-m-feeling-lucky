@@ -91,7 +91,7 @@ impl BlockDevice for Sd {
                         io::ErrorKind::Other,
                         "Sending command to SD card controller failed",
                     )),
-                x if x < -2 => Err(io::Error::new(
+                _ => Err(io::Error::new(
                     io::ErrorKind::Other,
                     format!("Got unknown card error: {}", result),
                     )),
@@ -100,7 +100,7 @@ impl BlockDevice for Sd {
     }
 
     fn write_sector(&mut self, _n: u64, _buf: &[u8]) -> io::Result<usize> {
-        //unimplemented!("SD card and file system are read only")
+        unimplemented!("SD card and file system are read only")
         //readonly
     }
 }
