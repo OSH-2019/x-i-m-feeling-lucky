@@ -99,7 +99,7 @@ fn memory_map() -> Option<(usize, usize)> {
     let binary_end = unsafe { (&_end as *const u8) as u32 };
 
     for atag in Atags::get() {
-        if let Atags::Mem(mem) = atag.mem() {
+        if let Some(mem) = atag.mem() {
             let start = max(binary_end, mem.start) as usize;
             let end = (mem.start + mem.size) as usize;
             return Some((start, end));
