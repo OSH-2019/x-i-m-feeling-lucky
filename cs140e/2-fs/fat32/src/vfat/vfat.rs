@@ -197,7 +197,13 @@ impl<'a> FileSystem for &'a Shared<VFat> {
         panic!("Dummy")
     }
 
-    fn canonicalize<P: AsRef<Path>>(self, path: P) -> io::Result<PathBuf> {
-        unimplemented!("shouldn't use it");
+    fn canonicalize<P: AsRef<Path>>(self, path_ref: P) -> io::Result<PathBuf> {
+        let dir_entries = self.get_entries(path_ref)?;
+        let mut result = PathBuf::from("/");
+        for entry in dir_entries {
+            use traits::Entry;
+            result.push(entry.name());
+        }
+        Ok(result)
     }
 }
