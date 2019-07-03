@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 /// Align `addr` downwards to the nearest multiple of `align`.
 ///
 /// The returned usize is always <= `addr.`

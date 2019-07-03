@@ -1,10 +1,21 @@
 use console::{kprint, kprintln, CONSOLE};
-use fat32::traits::{Dir, FileSystem, Entry, File, Metadata};
+use fat32::traits::{Dir, Entry, File, FileSystem, Metadata, Timestamp};
+use pi::atags::Atags;
 use stack_vec::StackVec;
 use std::io::Read;
 use std::path::PathBuf;
 use std::str;
 use FILE_SYSTEM;
+#[cfg(not(test))]
+use ALLOCATOR;
+
+const BANNER: &str = r#"
+ ____
+ | __ )  __ _ _ __  _ __   ___ _ __
+ |  _ \ / _` | '_ \| '_ \ / _ \ '__|
+ | |_) | (_| | | | | | | |  __/ |
+ |____/ \__,_|_| |_|_| |_|\___|_|
+"#;
 
 /// Error type for `Command` parse failures.
 #[derive(Debug)]
@@ -96,8 +107,9 @@ const MAXARG: usize = 64;
 /// Starts a shell using `prefix` as the prefix for each line. This function
 /// never returns: it is perpetually in a shell loop.
 pub fn shell(prefix: &str) -> ! {
-    let mut cwd = PathBuf::from("/");
+    kprintln!("{}", BANNER);
 
+    let mut cwd = PathBuf::from("/");
     loop {
         kprint!("({}) {}", cwd.display(), prefix);
         match Command::parse(readcmd(&mut [0u8; MAXBUF]), &mut [""; MAXARG]) {
@@ -107,6 +119,8 @@ pub fn shell(prefix: &str) -> ! {
                 "cd" => command_cd(&cmd, &mut cwd),
                 "ls" => command_ls(&cmd, &cwd),
                 "cat" => command_cat(&cmd, &cwd),
+                "atags" => command_atags(&cmd),
+                "allocator" => command_allocator(&cmd),
                 _ => {
                     kprintln!("unknown command: {}", cmd.path());
                 }
@@ -115,6 +129,17 @@ pub fn shell(prefix: &str) -> ! {
             Err(Error::Empty) => {}
         }
     }
+}
+
+fn command_atags(_cmd: &Command) {
+    for atag in Atags::get() {
+        kprintln!("{:?}", atag);
+    }
+}
+
+fn command_allocator(_cmd: &Command) {
+#[cfg(not(test))]
+    kprintln!("{:?}", ALLOCATOR);
 }
 
 fn command_echo(cmd: &Command) {
@@ -135,9 +160,14 @@ fn command_cd(cmd: &Command, cwd: &mut PathBuf) {
         return;
     }
     let tmp = cwd.clone();
-    *cwd = FILE_SYSTEM
+    let new_path = FILE_SYSTEM
         .canonicalize(tmp.join(cmd.args[1]))
         .unwrap_or(tmp);
+    if let Ok(_) = FILE_SYSTEM.open_dir(&new_path) {
+        *cwd = new_path;
+    } else {
+        kprintln!("Error: not a directory");
+    }
 }
 
 fn command_ls(cmd: &Command, cwd: &PathBuf) {
@@ -166,7 +196,9 @@ fn command_ls(cmd: &Command, cwd: &PathBuf) {
         }
     };
 
-    let dir = match FILE_SYSTEM.open_dir(path) {
+    let good_path = FILE_SYSTEM.canonicalize(path).unwrap();
+
+    let dir = match FILE_SYSTEM.open_dir(good_path) {
         Ok(thing) => thing,
         Err(e) => {
             kprintln!("Error opening dir: {}", e);
@@ -178,19 +210,31 @@ fn command_ls(cmd: &Command, cwd: &PathBuf) {
         Ok(entries) => {
             for entry in entries {
                 let metadata = entry.metadata();
-                if !cfg_all && metadata.hidden() {
+                if !cfg_all && (metadata.hidden() || entry.name() == "." || entry.name() == "..") {
                     continue;
                 }
                 kprint!(
-                    "{}{}{}{}{}{}\t{:?}\t{:?}\t",
+                    "{}{}{}\t",
                     if metadata.read_only() { 'r' } else { 'w' },
                     if metadata.hidden() { 'h' } else { 'v' },
-                    '-',
-                    '-',
                     if entry.is_dir() { 'd' } else { 'f' },
-                    '-',
-                    metadata.created(),
-                    metadata.modified()
+                );
+                let md_cr = metadata.created();
+                let md_mo = metadata.modified();
+                kprint!(
+                    "{}/{}/{} {}:{}:{}\t{}/{}/{} {}:{}:{}\t",
+                    md_cr.year(),
+                    md_cr.month(),
+                    md_cr.day(),
+                    md_cr.hour(),
+                    md_cr.minute(),
+                    md_cr.second(),
+                    md_mo.year(),
+                    md_mo.month(),
+                    md_mo.day(),
+                    md_mo.hour(),
+                    md_mo.minute(),
+                    md_mo.second(),
                 );
                 if entry.is_dir() {
                     kprintln!("{}\t{}/", 0, entry.name())
@@ -205,7 +249,8 @@ fn command_ls(cmd: &Command, cwd: &PathBuf) {
 
 fn command_cat(cmd: &Command, cwd: &PathBuf) {
     for path in &cmd.args[1..] {
-        let mut file = match FILE_SYSTEM.open_file(cwd.join(path)) {
+        let good_path = FILE_SYSTEM.canonicalize(cwd.join(path)).unwrap();
+        let mut file = match FILE_SYSTEM.open_file(good_path) {
             Ok(thing) => thing,
             Err(e) => {
                 kprintln!("Error opening file: {}", e);
@@ -218,7 +263,7 @@ fn command_cat(cmd: &Command, cwd: &PathBuf) {
             Ok(_) => {
                 kprint!(
                     "{}",
-                    str::from_utf8(&content).unwrap_or("Error: file contains invalid UTF-8")
+                    str::from_utf8(&content).unwrap_or("Error: file contains invalid UTF-8\n")
                 );
             }
             Err(e) => {

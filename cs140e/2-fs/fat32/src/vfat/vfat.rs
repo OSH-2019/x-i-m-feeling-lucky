@@ -1,13 +1,14 @@
 use std::io;
-use std::path::{Path, PathBuf};
-use std::mem;
 use std::io::Write;
+use std::mem;
+use std::path::Component;
+use std::path::{Path, PathBuf};
 
-use util::SliceExt;
 use mbr::MasterBootRecord;
-use vfat::{Shared, Cluster, File, Dir, Entry, FatEntry, Error, Status};
+use traits::{BlockDevice, FileSystem};
+use util::SliceExt;
 use vfat::{BiosParameterBlock, CachedDevice, Partition};
-use traits::{FileSystem, BlockDevice};
+use vfat::{Cluster, Dir, Entry, Error, FatEntry, File, Shared, Status};
 
 #[derive(Debug)]
 pub struct VFat {
@@ -20,10 +21,10 @@ pub struct VFat {
     pub root_dir_cluster: Cluster,
 }
 
-
 impl VFat {
     pub fn from<T>(mut device: T) -> Result<Shared<VFat>, Error>
-        where T: BlockDevice + 'static
+    where
+        T: BlockDevice + 'static,
     {
         let mbr = MasterBootRecord::from(&mut device)?;
 
@@ -44,12 +45,12 @@ impl VFat {
             sectors_per_cluster: ebpb.sectors_per_cluster,
             sectors_per_fat: ebpb.sectors_per_fat() as u32,
             fat_start_sector: start + ebpb.reserved_sectors as u64,
-            data_start_sector: start + ebpb.reserved_sectors as u64
+            data_start_sector: start
+                + ebpb.reserved_sectors as u64
                 + ebpb.sectors_per_fat() as u64 * ebpb.num_of_fat as u64,
             root_dir_cluster: Cluster::from(ebpb.root_dir_cluster_number),
         }))
     }
-
 
     //  * A method to read from an offset of a cluster into a buffer.
     fn read_cluster(
@@ -58,8 +59,8 @@ impl VFat {
         offset: usize,
         mut buf: &mut [u8],
     ) -> io::Result<usize> {
-        let mut sector_start = self.data_start_sector as usize +
-            (cluster.cluster_index() as usize - 2usize) * self.sectors_per_cluster as usize;
+        let mut sector_start = self.data_start_sector as usize
+            + (cluster.cluster_index() as usize - 2usize) * self.sectors_per_cluster as usize;
 
         let mut already_read: usize = 0;
 
@@ -68,8 +69,11 @@ impl VFat {
             if sector_index >= self.sectors_per_cluster as usize {
                 break;
             } else {
-                let new_offset = (offset + already_read) as usize - sector_index as usize * self.bytes_per_sector as usize;
-                let newly_read = buf.write(&(self.device.get(sector_start as u64 + sector_index as u64)?)[new_offset..])?;
+                let new_offset = (offset + already_read) as usize
+                    - sector_index as usize * self.bytes_per_sector as usize;
+                let newly_read = buf.write(
+                    &(self.device.get(sector_start as u64 + sector_index as u64)?)[new_offset..],
+                )?;
                 already_read += newly_read;
                 if buf.is_empty() {
                     break;
@@ -82,17 +86,16 @@ impl VFat {
 
     //  * A method to read all of the clusters chained from a starting cluster
     //    into a vector.
-    pub fn read_chain(
-        &mut self,
-        start: Cluster,
-        buf: &mut Vec<u8>,
-    ) -> io::Result<usize> {
+    pub fn read_chain(&mut self, start: Cluster, buf: &mut Vec<u8>) -> io::Result<usize> {
         let mut already_read: usize = 0;
         let mut current = start;
 
         loop {
             let buf_len = buf.len();
-            buf.resize(buf_len + self.bytes_per_sector as usize * self.sectors_per_cluster as usize, 0);
+            buf.resize(
+                buf_len + self.bytes_per_sector as usize * self.sectors_per_cluster as usize,
+                0,
+            );
 
             already_read += self.read_cluster(current, 0, &mut buf[already_read..])?;
 
@@ -123,7 +126,10 @@ impl VFat {
         let fat_offset = cluster_index % entries_per_sector as usize;
 
         if fat_index >= self.sectors_per_fat as usize {
-            return Err(io::Error::new(io::ErrorKind::NotFound, "F***ing Invalid Cluster"));
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "F***ing Invalid Cluster",
+            ));
         }
 
         let data = self.device.get(self.fat_start_sector + fat_index as u64)?;
@@ -138,7 +144,6 @@ impl<'a> FileSystem for &'a Shared<VFat> {
     type Entry = Entry;
 
     fn open<P: AsRef<Path>>(self, path: P) -> io::Result<Self::Entry> {
-        use std::path::Component;
         use traits::Entry;
         use vfat::Entry as Entry2;
 
@@ -147,21 +152,21 @@ impl<'a> FileSystem for &'a Shared<VFat> {
         for x in path.as_ref().components() {
             match x {
                 Component::Normal(name) => {
-                    current_dir = current_dir.as_dir()
-                        .ok_or(io::Error::new(io::ErrorKind::NotFound,
-                                              "File not found"))?
+                    current_dir = current_dir
+                        .as_dir()
+                        .ok_or(io::Error::new(io::ErrorKind::NotFound, "File not found"))?
                         .find(name)?
                 }
                 Component::CurDir => {
-                    current_dir = current_dir.as_dir()
-                        .ok_or(io::Error::new(io::ErrorKind::NotFound,
-                                              "File not found"))?
+                    current_dir = current_dir
+                        .as_dir()
+                        .ok_or(io::Error::new(io::ErrorKind::NotFound, "File not found"))?
                         .find(".")?
                 }
                 Component::ParentDir => {
-                    current_dir = current_dir.as_dir()
-                        .ok_or(io::Error::new(io::ErrorKind::NotFound,
-                                              "File not found"))?
+                    current_dir = current_dir
+                        .as_dir()
+                        .ok_or(io::Error::new(io::ErrorKind::NotFound, "File not found"))?
                         .find("..")?
                 }
                 _ => {}
@@ -173,20 +178,23 @@ impl<'a> FileSystem for &'a Shared<VFat> {
 
     fn create_file<P: AsRef<Path>>(self, _path: P) -> io::Result<Self::File> {
         // Skip this as this is a read only filesystem
-//        Ok(Self::File::new())
+        //        Ok(Self::File::new())
         panic!("Dummy")
     }
 
     fn create_dir<P>(self, _path: P, _parents: bool) -> io::Result<Self::Dir>
-        where P: AsRef<Path>
+    where
+        P: AsRef<Path>,
     {
         // Skip this as this is a read only filesystem
-//        Ok(Self::Dir::new())
+        //        Ok(Self::Dir::new())
         panic!("Dummy")
     }
 
     fn rename<P, Q>(self, _from: P, _to: Q) -> io::Result<()>
-        where P: AsRef<Path>, Q: AsRef<Path>
+    where
+        P: AsRef<Path>,
+        Q: AsRef<Path>,
     {
         // Skip this as this is a read only filesystem
         panic!("Dummy")
@@ -197,13 +205,28 @@ impl<'a> FileSystem for &'a Shared<VFat> {
         panic!("Dummy")
     }
 
+    /// This is a fake canonicalize, it just simplify the path
     fn canonicalize<P: AsRef<Path>>(self, path_ref: P) -> io::Result<PathBuf> {
-        let dir_entries = self.get_entries(path_ref)?;
-        let mut result = PathBuf::from("/");
-        for entry in dir_entries {
-            use traits::Entry;
-            result.push(entry.name());
+        let mut ret = PathBuf::new();
+        for item in path_ref.as_ref().components() {
+            match item {
+                Component::RootDir => ret = PathBuf::from("/"),
+                Component::ParentDir => {
+                    ret.pop();
+                }
+                Component::Normal(thing) => ret.push(thing),
+                Component::CurDir => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "path must be absolute",
+                    ));
+                }
+                Component::Prefix(_) => {
+                    unimplemented!("Component::Prefix should only appear in Windows")
+                }
+            }
         }
-        Ok(result)
+
+        Ok(ret)
     }
 }

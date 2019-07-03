@@ -44,6 +44,6 @@ pub extern "C" fn kmain() {
     //spin_sleep_ms(200);
     //SCHEDULER.start();
     loop {
-        shell::shell("$");
+        shell::shell("$ ");
     }
 }
