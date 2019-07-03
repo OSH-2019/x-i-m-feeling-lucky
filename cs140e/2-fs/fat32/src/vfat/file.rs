@@ -1,4 +1,4 @@
-use std::cmp::{min, max};
+use std::cmp::min;
 use std::io::{self, SeekFrom};
 
 use traits;
@@ -82,6 +82,7 @@ impl io::Seek for File {
                 if new_ptr >= self.size as i64 || new_ptr < 0 {
                     Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid Position"))
                 } else {
+                    self.ptr = new_ptr as u32;
                     Ok(new_ptr as u64)
                 }
             }
@@ -90,7 +91,7 @@ impl io::Seek for File {
 }
 
 impl io::Write for File {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+    fn write(&mut self, _buf: &[u8]) -> io::Result<usize> {
         // Skip this as this is a read only filesystem
         Ok(0)
     }

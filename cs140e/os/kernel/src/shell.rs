@@ -2,7 +2,7 @@ use console::{kprint, kprintln, CONSOLE};
 use fat32::traits::{Dir, Entry, File, FileSystem, Metadata, Timestamp};
 use pi::atags::Atags;
 use stack_vec::StackVec;
-use std::io::Read;
+use std::io::{SeekFrom, Seek, Read};
 use std::path::PathBuf;
 use std::str;
 use FILE_SYSTEM;
@@ -258,16 +258,21 @@ fn command_cat(cmd: &Command, cwd: &PathBuf) {
             }
         };
 
-        let mut content = Vec::new();
-        match file.read_to_end(&mut content) {
-            Ok(_) => {
-                kprint!(
-                    "{}",
-                    str::from_utf8(&content).unwrap_or("Error: file contains invalid UTF-8\n")
-                );
-            }
-            Err(e) => {
-                kprintln!("Error reading file: {}", e);
+        const BUF_SIZE: usize = 1024;
+        let mut buf = [0u8; BUF_SIZE];
+        loop {
+            match file.read(&mut buf) {
+                Ok(0) => break,
+                Ok(n) => match str::from_utf8(&buf[..n]) {
+                    Ok(stuff) => kprint!("{}", stuff),
+                    Err(e) => {
+                        let index = e.valid_up_to();
+                        let padding = index as i64 - n as i64;
+                        kprint!("{}", str::from_utf8(&buf[..index]).unwrap());
+                        file.seek(SeekFrom::Current(padding)).unwrap();
+                    }
+                },
+                Err(e) => kprintln!("Error reading file: {}", e),
             }
         }
     }
