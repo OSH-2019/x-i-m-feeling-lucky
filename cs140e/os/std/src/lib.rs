@@ -362,8 +362,10 @@ use prelude::v1::*;
                  debug_assert_ne, unreachable, unimplemented, write, writeln, try)]
 extern crate core as __core;
 
-// #[macro_use]
 #[macro_reexport(vec, format)]
+
+#[macro_use]
+#[allow(unused_imports)]
 extern crate alloc;
 //- extern crate alloc_system;
 extern crate std_unicode;

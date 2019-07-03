@@ -1,7 +1,10 @@
 #![feature(asm, lang_items)]
 
+
 extern crate xmodem;
 extern crate pi;
+
+use pi::uart::MiniUart;
 
 pub mod lang_items;
 

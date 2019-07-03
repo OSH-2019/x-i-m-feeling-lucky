@@ -222,7 +222,7 @@ fn command_ls(cmd: &Command, cwd: &PathBuf) {
                 let md_cr = metadata.created();
                 let md_mo = metadata.modified();
                 kprint!(
-                    "{}/{}/{} {}:{}:{}\t{}/{}/{} {}:{}:{}\t",
+                    "{:0>4}/{:0>2}/{:0>2} {:0>2}:{:0>2}:{:0>2}\t{:0>4}/{:0>2}/{:0>2} {:0>2}:{:0>2}:{:0>2}\t",
                     md_cr.year(),
                     md_cr.month(),
                     md_cr.day(),

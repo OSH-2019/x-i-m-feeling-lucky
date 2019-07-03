@@ -1,11 +1,6 @@
 [dependencies]
-core = {}
 std_unicode = {}
 
 [dependencies.compiler_builtins]
 features = ["mem"]
 stage = 1
-
-[dependencies.std]
-path = "../std_without_fs"
-stage = 2

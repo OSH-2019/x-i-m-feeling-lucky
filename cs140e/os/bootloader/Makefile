@@ -36,7 +36,7 @@ $(RUST_DEBUG_LIB): $(RUST_DEPS)
 
 $(RUST_RELEASE_LIB): $(RUST_DEPS)
 	@echo "+ Building $@ [xargo --release]"
-	@$(XARGO) build --release --target=$(TARGET)
+	@$(XARGO) build --release --target=$(TARGET) --verbose
 
 ifeq ($(DEBUG),1)
 $(RUST_LIB): $(RUST_DEBUG_LIB) | $(BUILD_DIR)
