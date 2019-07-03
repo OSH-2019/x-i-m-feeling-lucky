@@ -46,7 +46,7 @@
 ### 安装 ttywrite 工具
 
 ``` bash
-cd cs140e\1-shell\ttywrite
+cd cs140e/1-shell/ttywrite
 cargo install
 ```
 
@@ -64,12 +64,12 @@ device_tree=
 获取`kernel8.img`：
 
 ``` bash
-cd cs140e\os\bootloader
+cd cs140e/os/bootloader
 make
-cp build\bootloader.bin kernel8.img
+cp build/bootloader.bin kernel8.img
 ```
 
-> 也可以在`cs140e\os\files_used_to_boot`文件夹下直接找到这 4 个文件。
+> 也可以在`cs140e/os/files_used_to_boot`文件夹下直接找到这 4 个文件。
 
 把 Micro SD 卡用 MBR 分区表建立一个 FAT32 分区，将这 4 个文件放入分区根目录内。
 
@@ -81,7 +81,7 @@ Micro SD 卡插入树莓派中，使用 USB to TTL 转接线将树莓派和电�
 
 ### 运行
 
-进入`/dev`文件夹，找到`ttyUSB`开头的一项，记下这个名字，然后将`cs140e\os\kernel\Makefile`中`PI_TTY ?= /dev/ttyUSB0`做相应修改。
+进入`/dev`文件夹，找到`ttyUSB`开头的一项，记下这个名字，然后将`cs140e/os/kernel/Makefile`中`PI_TTY ?= /dev/ttyUSB0`做相应修改。
 
 在`kernel`目录下执行命令：
 
