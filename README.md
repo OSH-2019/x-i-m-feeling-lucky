@@ -40,3 +40,60 @@
 - 第11周：第四次作业（作业+实验3）
 - 第16周：期末考试
 - 第17及18周：项目检查与实验3检查
+
+## Get Started
+
+### 安装 ttywrite 工具
+
+``` bash
+cd cs140e\1-shell\ttywrite
+cargo install
+```
+
+### 在 Micro SD 中放入启动必需文件
+
+启动必需文件有 4 个：`start.elf`, `bootcode.bin`, `config.txt`,  `kernel8.img`。
+
+从 https://github.com/raspberrypi/firmware/tree/master/boot 下载`start.elf`和`bootcode.bin`文件，新建文本文件`config.txt`，内容如下：
+
+```
+kernel_address=0x4000000
+device_tree=
+```
+
+获取`kernel8.img`：
+
+``` bash
+cd cs140e\os\bootloader
+make
+cp build\bootloader.bin kernel8.img
+```
+
+> 也可以在`cs140e\os\files_used_to_boot`文件夹下直接找到这 4 个文件。
+
+把 Micro SD 卡用 MBR 分区表建立一个 FAT32 分区，将这 4 个文件放入分区根目录内。
+
+### 连接设备
+
+Micro SD 卡插入树莓派中，使用 USB to TTL 转接线将树莓派和电脑相连，连接方式如下。
+
+![img](README.assets/usb-ttl-pi3.png)
+
+### 运行
+
+进入`/dev`文件夹，找到`ttyUSB`开头的一项，记下这个名字，然后将`cs140e\os\kernel\Makefile`中`PI_TTY ?= /dev/ttyUSB0`做相应修改。
+
+在`kernel`目录下执行命令：
+
+``` bash
+make install
+```
+
+待传输完成后，执行命令：
+
+``` bash
+screen /dev/ttyUSB0 115200 # if your TTY device differs, modify ttyUSB0 appropriately.
+```
+
+Enjoy it!
+
