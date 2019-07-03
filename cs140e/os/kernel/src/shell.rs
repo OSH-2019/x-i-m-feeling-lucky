@@ -144,10 +144,10 @@ fn command_allocator(_cmd: &Command) {
 
 fn command_echo(cmd: &Command) {
     let length = cmd.args.len();
-    for i in 1..(length - 1) {
+    for i in 1..length {
         kprint!("{} ", cmd.args.as_slice()[i]);
     }
-    kprintln!("{}", cmd.args.as_slice()[length - 1]);
+    kprintln!("");
 }
 
 fn command_pwd(_cmd: &Command, cwd: &PathBuf) {
