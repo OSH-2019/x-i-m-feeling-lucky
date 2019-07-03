@@ -43,6 +43,31 @@
 
 ## Get Started
 
+### 软硬件环境
+
+#### 硬件
+
+- 树莓派 3B+
+- CP2102 USB to TTL 转接线
+- Micro SD 卡
+- 读卡器
+
+#### 软件
+
+安装 Rust
+
+```
+curl https://sh.rustup.rs -sSf | sh
+```
+
+更改 Rust 工具链版本
+
+```
+cargo install --version 0.3.10 xargo
+rustup default nightly-2018-01-09
+rustup component add rust-src
+```
+
 ### 安装 ttywrite 工具
 
 ``` bash
