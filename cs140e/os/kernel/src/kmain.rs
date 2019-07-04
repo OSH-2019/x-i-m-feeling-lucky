@@ -1,4 +1,5 @@
 #![feature(lang_items)]
+#![feature(inclusive_range_syntax)]
 #![feature(core_intrinsics)]
 #![feature(const_fn)]
 #![feature(asm)]

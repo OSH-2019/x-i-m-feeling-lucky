@@ -67,10 +67,16 @@ const GN: u8 = 0x0D;   // \n
 const BS: u8 = 0x08;   // backspace
 const DE: u8 = 0x7F;   // delete
 const BE: u8 = 0x07;   // ring the bell
+const ESC: u8 = 0x1B;
+const CTRL_A: u8 = 0x01;
+const CTRL_B: u8 = 0x02;
+const CTRL_E: u8 = 0x05;
+const CTRL_F: u8 = 0x06;
 const CTRL_U: u8 = 0x15;
+
 /// Read a command from users input
-fn readcmd(buf: &mut [u8]) -> &str {
-    let mut len = 0;
+fn readcmd(buf: &mut Vec<u8>) -> &str {
+    let mut cursor = 0;
     loop {
         let byte = CONSOLE.lock().read_byte();
         match byte {
@@ -79,28 +85,99 @@ fn readcmd(buf: &mut [u8]) -> &str {
                 kprintln!("");
                 break;
             }
-            BS | DE if len > 0 => {
+            BS | DE if cursor > 0 => {
                 // delete a char
-                kprint!("{} {}", BS as char, BS as char);
-                len -= 1;
+                cursor -= 1;
+                buf.remove(cursor);
+                kprint!("{}", BS as char);
+                for ch in &buf[cursor..] {
+                    kprint!("{}", *ch as char);
+                }
+                kprint!(" ");
+                for _ in cursor..=buf.len() {
+                    kprint!("{}", BS as char);
+                }
             }
-            _ if len == buf.len() => {
+            _ if buf.len() == buf.capacity() => {
                 // ring the bell if overflow
                 kprint!("{}", BE as char);
             }
             byte @ b' '...b'~' => {
                 // normal char
-                kprint!("{}", byte as char);
-                buf[len] = byte;
-                len += 1;
+                buf.insert(cursor, byte);
+                for ch in &buf[cursor..] {
+                    kprint!("{}", *ch as char);
+                }
+                cursor += 1;
+                for _ in cursor..buf.len() {
+                    kprint!("{}", BS as char);
+                }
+            }
+            CTRL_A => {
+                // move cursor to start
+                for _ in 0..cursor {
+                    kprint!("{}", BS as char);
+                }
+                cursor = 0;
+            }
+            CTRL_B => {
+                // move cursor back
+                if cursor > 0 {
+                    kprint!("{}", BS as char);
+                    cursor -= 1;
+                }
+            }
+            CTRL_E => {
+                // move cursor to the end
+                for _ in cursor..buf.len() {
+                    kprint!("{}{}{}", ESC as char, '[', 'C');
+                }
+                cursor = buf.len();
+            }
+            CTRL_F => {
+                // move cursor forward
+                if cursor < buf.len() {
+                    kprint!("{}{}{}", ESC as char, '[', 'C');
+                    cursor += 1;
+                }
             }
             CTRL_U => {
                 // clear line
-                for i in 0..len {
-                    buf[i] = 0;
+                for _ in cursor..buf.len() {
+                    kprint!("{}{}{}", ESC as char, '[', 'C');
+                }
+                for _ in 0..buf.len() {
+                    buf.remove(0);
                     kprint!("{} {}", BS as char, BS as char);
                 }
-                len = 0;
+                cursor = 0;
+            }
+            ESC => {
+                let ch = CONSOLE.lock().read_byte();
+                if ch != b'[' {
+                    kprint!("{}", BE as char);
+                    continue;
+                }
+                let ch = CONSOLE.lock().read_byte();
+                match ch {
+                    b'D' => {
+                        // left
+                        if cursor > 0 {
+                            kprint!("{}", BS as char);
+                            cursor -= 1;
+                        }
+                    }
+                    b'C' => {
+                        // right
+                        if cursor < buf.len() {
+                            kprint!("{}{}{}", ESC as char, '[', 'C');
+                            cursor += 1;
+                        }
+                    }
+                    _ => {
+                        kprint!("{}", BE as char);
+                    }
+                }
             }
             _ => {
                 // unrecognized char
@@ -108,7 +185,7 @@ fn readcmd(buf: &mut [u8]) -> &str {
             }
         }
     }
-    str::from_utf8(&buf[..len]).unwrap()
+    str::from_utf8(&buf.as_slice()).unwrap()
 }
 
 const MAXBUF: usize = 512;
@@ -121,7 +198,8 @@ pub fn shell(prefix: &str) -> ! {
     let mut cwd = PathBuf::from("/");
     loop {
         kprint!("({}) {}", cwd.display(), prefix);
-        match Command::parse(readcmd(&mut [0u8; MAXBUF]), &mut [""; MAXARG]) {
+        let mut cmd_buf = Vec::with_capacity(MAXBUF);
+        match Command::parse(readcmd(&mut cmd_buf), &mut [""; MAXARG]) {
             Ok(cmd) => match cmd.path() {
                 "echo" => command_echo(&cmd),
                 "pwd" => command_pwd(&cmd, &cwd),
