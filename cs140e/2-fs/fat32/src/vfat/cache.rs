@@ -130,7 +130,7 @@ impl BlockDevice for CachedDevice {
         buf.write(self.get(n)?)
     }
 
-    fn write_sector(&mut self, n: u64, mut buf: &[u8]) -> io::Result<usize> {
+    fn write_sector(&mut self, n: u64, buf: &[u8]) -> io::Result<usize> {
         self.get_mut(n)?.write(buf)
     }
 }

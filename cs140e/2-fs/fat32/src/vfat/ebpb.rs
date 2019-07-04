@@ -51,13 +51,16 @@ impl BiosParameterBlock {
         let _ = device.read_sector(sector, &mut buf);
 
         let ebpb: BiosParameterBlock = unsafe { mem::transmute(buf) };
-//        let ebpb = Self::modify_byte_order(ebpb);
 
-        if ebpb.bootable_signature != 0xAA55 {
+        if !ebpb.is_bootable() {
             return Err(Error::BadSignature);
         }
 
         Ok(ebpb)
+    }
+
+    fn is_bootable(&self) -> bool {
+        self.bootable_signature == 0xAA55
     }
 
     pub fn sectors_per_fat(&self) -> u32 {

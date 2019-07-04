@@ -29,6 +29,7 @@ impl VFat {
         let mbr = MasterBootRecord::from(&mut device)?;
 
         let start = mbr.first_fat32().ok_or(Error::NotFound)?.relative_sector as u64;
+
         let ebpb = BiosParameterBlock::from(&mut device, start)?;
 
         let dev = CachedDevice::new(
