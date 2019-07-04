@@ -68,12 +68,23 @@ rustup default nightly-2018-01-09
 rustup component add rust-src
 ```
 
+### 安装 aarch64-none-elf 工具
+
+``` bash
+wget https://cs140e.sergio.bz/files/aarch64-none-elf-linux-x64.tar.gz
+tar -xzvf aarch64-none-elf-linux-x64.tar.gz
+```
+
+将`aarch64-none-elf/bin`目录添加到`PATH`环境变量即可。
+
 ### 安装 ttywrite 工具
 
 ``` bash
 cd cs140e/1-shell/ttywrite
 cargo install
 ```
+
+> 若出现类似`error: non-string literals in attributes, or string literals in top-level positions, are experimental`的错误，需按照提示在某文件中添加`#![feature(attr_literals)]`。要添加这一行的文件需要根据报错的文件位置来确定，具体方法为，若报错的文件为`*/src/../..*rs`，则在`*/src/lib.rs`中添加`#![feature(attr_literals)]`。若下文中出现同样报错，再次按此操作即可。
 
 ### 在 Micro SD 中放入启动必需文件
 
