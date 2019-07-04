@@ -40,7 +40,8 @@ use fs::FileSystem;
 use process::GlobalScheduler;
 use process::sys_sleep;
 use pi::gpio::Gpio;
-
+use console::{kprint, kprintln, CONSOLE};
+use pi::timer::spin_sleep_ms;
 
 #[cfg(not(test))]
 #[global_allocator]
@@ -57,7 +58,7 @@ pub extern "C" fn kmain() {
     //#[cfg(feature = "qemu")]
     //Timer::initialize();
     FILE_SYSTEM.initialize();
-    //spin_sleep_ms(200);
+    spin_sleep_ms(2000);
     SCHEDULER.start();
 }
 

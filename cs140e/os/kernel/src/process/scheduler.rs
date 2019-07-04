@@ -1,17 +1,19 @@
 use std::collections::VecDeque;
-
+use console::{kprint, kprintln, CONSOLE};
 use mutex::Mutex;
 use process::{Process, State, Id};
 use traps::TrapFrame;
 use pi::interrupt::{Controller, Interrupt};
 use pi::timer::tick_in;
+use pi::timer::spin_sleep_ms;
 use aarch64;
 use run_shell;
 use run_blinky;
 
 /// The `tick` time.
 // FIXME: When you're ready, change this to something more reasonable.
-pub const TICK: u32 = 2 * 1000;
+//pub const TICK: u32 = 10 * 1000 * 1000; // us
+pub const TICK: u32 = ::std::u32::MAX;
 
 /// Process scheduler for the entire machine.
 #[derive(Debug)]
@@ -43,26 +45,24 @@ impl GlobalScheduler {
     /// not return under normal conditions.
     pub fn start(&self) {
         //unimplemented!()
+        spin_sleep_ms(2000);
         *self.0.lock() = Some(Scheduler::new());
-
         let mut process = Process::new().expect("First process failed");
         process.trap_frame.ELR = run_shell as u64;
         process.trap_frame.SP = process.stack.top().as_u64();
         // Don't mask DAIF, set execution level to 0.
         process.trap_frame.SPSR = 0b1101_00_0000;
         let tf = process.trap_frame.clone();
-
         self.add(process);
-
         let mut process_1 = Process::new().unwrap();
         process_1.trap_frame.ELR = run_blinky as u64;
         process_1.trap_frame.SP = process_1.stack.top().as_u64();
         process_1.trap_frame.SPSR = 0b1101_00_0000;
         self.add(process_1);
-
         Controller::new().enable(Interrupt::Timer1);
         tick_in(TICK);
 
+        kprintln!("Beginning");
         // Switch to process.
         unsafe {
             asm!(
@@ -74,12 +74,13 @@ impl GlobalScheduler {
                  adr x0, _start
                  mov SP, x0
                  mov x0, xzr
-                 mov lr, xzr
+                 mov x30, xzr
                  // Start the process.
                  eret"
                  :: "r"(tf)
                  :: "volatile");
         }
+        kprintln!("Exiting");
     }
 }
 
