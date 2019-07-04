@@ -1,6 +1,5 @@
 use console::{kprint, kprintln, CONSOLE};
 use fat32::traits::{Dir, Entry, File, FileSystem, Metadata, Timestamp};
-use pi::atags::Atags;
 use std::io::{SeekFrom, Seek, Read};
 use std::path::PathBuf;
 use std::str;
@@ -282,7 +281,6 @@ pub fn shell(prefix: &str) -> ! {
                 "cd" => command_cd(&cmd, &mut cwd),
                 "ls" => command_ls(&cmd, &cwd),
                 "cat" => command_cat(&cmd, &cwd),
-                "atags" => command_atags(&cmd),
                 "allocator" => command_allocator(&cmd),
                 _ => {
                     kprintln!("unknown command: {}", cmd.path());
@@ -291,12 +289,6 @@ pub fn shell(prefix: &str) -> ! {
             Err(Error::TooManyArgs) => kprintln!("error: too many arguments"),
             Err(Error::Empty) => {}
         }
-    }
-}
-
-fn command_atags(_cmd: &Command) {
-    for atag in Atags::get() {
-        kprintln!("{:?}", atag);
     }
 }
 
