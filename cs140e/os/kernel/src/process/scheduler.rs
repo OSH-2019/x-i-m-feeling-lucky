@@ -37,7 +37,44 @@ impl GlobalScheduler {
     /// using timer interrupt based preemptive scheduling. This method should
     /// not return under normal conditions.
     pub fn start(&self) {
-        unimplemented!()
+        //unimplemented!()
+        *self.0.lock() = Some(Scheduler::new());
+
+        let mut process = Process::new().expect("First process failed");
+        process.trap_frame.elr = run_shell as u64;
+        process.trap_frame.sp = process.stack.top().as_u64();
+        // Don't mask DAIF, set execution level to 0.
+        process.trap_frame.spsr = 0x0;
+        let tf = process.trap_frame.clone();
+
+        self.add(process);
+
+        let mut process_1 = Process::new().unwrap();
+        process_1.trap_frame.elr = run_blinky as u64;
+        process_1.trap_frame.sp = process_1.stack.top().as_u64();
+        process_1.trap_frame.spsr = 0x0;
+        self.add(process_1);
+
+        Controller::new().enable(Interrupt::Timer1);
+        tick_in(TICK);
+
+        // Switch to process.
+        unsafe {
+            asm!(
+                "// Set the SP to the start of the trap frame.
+                 mov SP, $0
+                 // Restore the trap frame registers.
+                 bl context_restore
+                 // Reset SP to _start.
+                 adr x0, _start
+                 mov SP, x0
+                 mov x0, xzr
+                 mov lr, xzr
+                 // Start the process.
+                 eret"
+                 :: "r"(tf)
+                 :: "volatile");
+        }
     }
 }
 

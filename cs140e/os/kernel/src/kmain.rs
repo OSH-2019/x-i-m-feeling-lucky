@@ -55,8 +55,22 @@ pub extern "C" fn kmain() {
     //Timer::initialize();
     FILE_SYSTEM.initialize();
     //spin_sleep_ms(200);
-    //SCHEDULER.start();
+    SCHEDULER.start();
     loop {
         shell::shell("$ ");
+    }
+}
+
+pub extern fn run_shell() {
+    loop { shell::shell("user0> "); }
+}
+
+pub extern fn run_blinky() {
+    let mut ready_led = Gpio::new(16).into_output();
+    loop {
+        ready_led.set();
+        sys_sleep(500);
+        ready_led.clear();
+        sys_sleep(500);
     }
 }
