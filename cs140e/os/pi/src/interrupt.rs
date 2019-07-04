@@ -1,6 +1,6 @@
 use common::IO_BASE;
 use volatile::prelude::*;
-use volatile::{Volatile, ReadVolatile};
+use volatile::{Volatile, ReadVolatile, Reserved};
 
 const INT_BASE: usize = IO_BASE + 0xB000 + 0x200;
 
@@ -55,6 +55,6 @@ impl Controller {
 
     /// Returns `true` if `int` is pending. Otherwise, returns `false`.
     pub fn is_pending(&self, int: Interrupt) -> bool {
-        self.registers.pending[int as usize / 32].write(1 << (int as usize) % 32);
+        self.registers.pending[int as usize / 32].has_mask(1 << (int as usize) % 32)
     }
 }

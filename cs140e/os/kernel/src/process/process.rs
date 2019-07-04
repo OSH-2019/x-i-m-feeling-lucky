@@ -1,6 +1,7 @@
 use traps::TrapFrame;
 use process::{State, Stack};
 use std::mem::replace;
+use std::mem;
 
 /// Type alias for the type of a process ID.
 pub type Id = u64;
@@ -25,9 +26,9 @@ impl Process {
     pub fn new() -> Option<Process> {
         match Stack::new() {
             Some(stack) => Some(Process {
-                trap_frame: Box::new(TrapFrame.default()),
-                stack: stack,
-                state: State::Ready
+                trap_frame: Box::new(TrapFrame::default()),
+                stack,
+                state: State::Ready,
             }),
             None => None
         }
@@ -55,19 +56,18 @@ impl Process {
     pub fn is_ready(&mut self) -> bool {
         match self.state {
             State::Ready => true,
-            State::Waiting(Event) => {
+            State::Waiting(_) => {
                 let old = mem::replace(&mut self.state, State::Ready);
-                let ready = if let State::Waiting(mut is_ready) = old {
-                    is_ready(self)
+                if let State::Waiting(mut ready) = old {
+                    if ready(self) {
+                        true
+                    } else {
+                        self.state = State::Waiting(ready);
+                        false
+                    }
                 } else {
-                    panic!(Invalid path);
+                    panic!("Invalid path");
                 }
-
-                if !ready {
-                    self.state = old;
-                }
-
-                ready
             }
             _ => false
         }

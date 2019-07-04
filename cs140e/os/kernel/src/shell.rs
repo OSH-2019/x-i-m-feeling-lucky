@@ -7,6 +7,8 @@ use FILE_SYSTEM;
 #[cfg(not(test))]
 use ALLOCATOR;
 
+use process::sys_sleep;
+
 const BANNER: &str = r#"
  ____
  | __ )  __ _ _ __  _ __   ___ _ __
@@ -64,11 +66,16 @@ impl<'a> Command<'a> {
     }
 }
 
-const GR: u8 = 0x0A;   // \r
-const GN: u8 = 0x0D;   // \n
-const BS: u8 = 0x08;   // backspace
-const DE: u8 = 0x7F;   // delete
-const BE: u8 = 0x07;   // ring the bell
+const GR: u8 = 0x0A;
+// \r
+const GN: u8 = 0x0D;
+// \n
+const BS: u8 = 0x08;
+// backspace
+const DE: u8 = 0x7F;
+// delete
+const BE: u8 = 0x07;
+// ring the bell
 const ESC: u8 = 0x1B;
 const CTRL_A: u8 = 0x01;
 const CTRL_B: u8 = 0x02;
@@ -264,6 +271,7 @@ fn readcmd(history: &mut Vec<Vec<u8>>) -> String {
 
 const MAXBUF: usize = 512;
 const MAXARG: usize = 64;
+
 /// Starts a shell using `prefix` as the prefix for each line. This function
 /// never returns: it is perpetually in a shell loop.
 pub fn shell(prefix: &str) -> ! {
@@ -282,6 +290,7 @@ pub fn shell(prefix: &str) -> ! {
                 "ls" => command_ls(&cmd, &cwd),
                 "cat" => command_cat(&cmd, &cwd),
                 "allocator" => command_allocator(&cmd),
+                "sleep" => command_sleep(&cmd),
                 _ => {
                     kprintln!("unknown command: {}", cmd.path());
                 }
@@ -293,7 +302,7 @@ pub fn shell(prefix: &str) -> ! {
 }
 
 fn command_allocator(_cmd: &Command) {
-#[cfg(not(test))]
+    #[cfg(not(test))]
     kprintln!("{:?}", ALLOCATOR);
 }
 
@@ -433,6 +442,28 @@ fn command_cat(cmd: &Command, cwd: &PathBuf) {
                 },
                 Err(e) => kprintln!("Error reading file: {}", e),
             }
+        }
+    }
+}
+
+fn command_sleep(cmd: &Command) {
+    match cmd.args.len() {
+        1 => {
+            kprintln!("Missing parameter.");
+        }
+        2 => {
+            match cmd.args[1].parse() {
+                Ok(x) => {
+                    kprintln!("Pi will sleep {} ms.",x);
+                    sys_sleep(x);
+                }
+                Err(_) => {
+                    kprintln!("Wrong parameter.");
+                }
+            }
+        }
+        _ => {
+            kprintln!("Too many parameters.");
         }
     }
 }

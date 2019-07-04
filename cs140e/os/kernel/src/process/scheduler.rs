@@ -3,10 +3,15 @@ use std::collections::VecDeque;
 use mutex::Mutex;
 use process::{Process, State, Id};
 use traps::TrapFrame;
+use pi::interrupt::{Controller, Interrupt};
+use pi::timer::tick_in;
+use aarch64;
+use run_shell;
+use run_blinky;
 
 /// The `tick` time.
 // FIXME: When you're ready, change this to something more reasonable.
-pub const TICK: u32 = 2 * 1000 * 1000;
+pub const TICK: u32 = 2 * 1000;
 
 /// Process scheduler for the entire machine.
 #[derive(Debug)]
@@ -41,18 +46,18 @@ impl GlobalScheduler {
         *self.0.lock() = Some(Scheduler::new());
 
         let mut process = Process::new().expect("First process failed");
-        process.trap_frame.elr = run_shell as u64;
-        process.trap_frame.sp = process.stack.top().as_u64();
+        process.trap_frame.ELR = run_shell as u64;
+        process.trap_frame.SP = process.stack.top().as_u64();
         // Don't mask DAIF, set execution level to 0.
-        process.trap_frame.spsr = 0x0;
+        process.trap_frame.SPSR = 0b1101_00_0000;
         let tf = process.trap_frame.clone();
 
         self.add(process);
 
         let mut process_1 = Process::new().unwrap();
-        process_1.trap_frame.elr = run_blinky as u64;
-        process_1.trap_frame.sp = process_1.stack.top().as_u64();
-        process_1.trap_frame.spsr = 0x0;
+        process_1.trap_frame.ELR = run_blinky as u64;
+        process_1.trap_frame.SP = process_1.stack.top().as_u64();
+        process_1.trap_frame.SPSR = 0b1101_00_0000;
         self.add(process_1);
 
         Controller::new().enable(Interrupt::Timer1);
@@ -89,10 +94,10 @@ impl Scheduler {
     /// Returns a new `Scheduler` with an empty queue.
     fn new() -> Scheduler {
         let processes = VecDeque::new();
-        Scheduler{
+        Scheduler {
             processes,
             current: None,
-            last_id: None
+            last_id: None,
         }
     }
 
@@ -132,8 +137,8 @@ impl Scheduler {
     /// energy as much as possible in the interim.
     fn switch(&mut self, new_state: State, tf: &mut TrapFrame) -> Option<Id> {
         //get the current process for scheduling
-        let current_process = self.processes.pop_front()?;
-        let current_id = self.get_id();
+        let mut current_process = self.processes.pop_front()?;
+        let current_id = current_process.get_id();
 
         current_process.trap_frame = Box::new(*tf);
         current_process.state = new_state;
@@ -141,9 +146,9 @@ impl Scheduler {
 
         //find the next process to switch to
         loop {
-            let next_process = self.processes.pop_front()?;
+            let mut next_process = self.processes.pop_front()?;
             if next_process.is_ready() {
-                *tf = next_process.trap_frame;
+                *tf = *next_process.trap_frame;
                 next_process.state = State::Running;
                 self.processes.push_front(next_process);
                 break;
@@ -154,6 +159,6 @@ impl Scheduler {
             self.processes.push_back(next_process);
         }
         //return the current id is ok
-        self.current;
+        self.current
     }
 }

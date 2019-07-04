@@ -11,5 +11,5 @@ pub fn handle_irq(interrupt: Interrupt, tf: &mut TrapFrame) {
         SCHEDULER.switch(State::Ready, tf).expect("IRQ switch process");
     }
     //unmask irq
-    tf.spsr &= !(1 << 7);
+    tf.SPSR &= !(1 << 7);
 }

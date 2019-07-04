@@ -110,7 +110,7 @@ go_kmain:
 context_save:
     // Save the remaining context to the stack.
     // then x1 ... x29 Res lr x0 (240+16 = 256B)
-    stp     x29  [SP, #-16]! 
+    stp     x29, x29, [SP, #-16]! 
     stp     x27, x28, [SP, #-16]!
     stp     x25, x26, [SP, #-16]!
     stp     x23, x24, [SP, #-16]!
@@ -154,9 +154,9 @@ context_save:
     // info in x0, esr in x1, tf in x2(default 0 currently)    
     mrs     x1, ESR_EL1
     mov     x2, SP
-    mov     x28, lr //x28 is callee-saved reg
+    mov     x28, x29 //x28 is callee-saved reg
     bl      handle_exception
-    mov     lr, x28
+    mov     x29, x28
 
 .global context_restore
 context_restore:
@@ -205,17 +205,29 @@ context_restore:
 
 #define HANDLER(source, kind) \
     .align 7; \
-    stp     lr, x0, [SP, #-16]!; \
+    stp     x29, x0, [SP, #-16]!; \
     mov     x0, ##source; \
     movk    x0, ##kind, LSL #16; \
     bl      context_save; \
-    ldp     lr, x0, [SP], #16; \
+    ldp     x29, x0, [SP], #16; \
     eret
 
 .align 11
 _vectors:
     // Setup the 16 exception vectors. named from src/trap/mod.rs
-    HANDLER(0, 0)   HANDLER(0, 1)   HANDLER(0, 2)   HANDLER(0, 3)
-    HANDLER(1, 0)   HANDLER(1, 1)   HANDLER(1, 2)   HANDLER(1, 3)
-    HANDLER(2, 0)   HANDLER(2, 1)   HANDLER(2, 2)   HANDLER(2, 3)
-    HANDLER(3, 0)   HANDLER(3, 1)   HANDLER(3, 2)   HANDLER(3, 3)
+    HANDLER(0, 0)
+	HANDLER(0, 1)
+	HANDLER(0, 2)
+	HANDLER(0, 3)
+    HANDLER(1, 0)
+	HANDLER(1, 1)
+	HANDLER(1, 2)
+	HANDLER(1, 3)
+    HANDLER(2, 0)
+	HANDLER(2, 1)
+	HANDLER(2, 2)
+	HANDLER(2, 3)
+    HANDLER(3, 0)
+	HANDLER(3, 1)
+	HANDLER(3, 2)
+	HANDLER(3, 3)

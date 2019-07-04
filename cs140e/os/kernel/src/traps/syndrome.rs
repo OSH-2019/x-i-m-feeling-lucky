@@ -22,7 +22,7 @@ impl From<u32> for Fault {
             0b001100 => Permission,
             0b100000 => Alignment,
             0b110000 => TlbConflict,
-            _ => Fault:Other(value as u8),
+            _ => Fault::Other(value as u8),
         }
     }
 }
@@ -115,8 +115,8 @@ impl From<u32> for Syndrome {
             0b110100 => Watchpoint,
             0b110101 => Watchpoint,
             0b111000 => Breakpoint,
-            0b111100 => Brk(),
-            Other => Other(Other) 
+            0b111100 => Brk((ISS & 0xFFFF) as u16),
+            _ => Other(EC),
         }
     }
 }

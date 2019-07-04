@@ -38,6 +38,9 @@ pub mod vm;
 use allocator::Allocator;
 use fs::FileSystem;
 use process::GlobalScheduler;
+use process::sys_sleep;
+use pi::gpio::Gpio;
+
 
 #[cfg(not(test))]
 #[global_allocator]
@@ -56,13 +59,12 @@ pub extern "C" fn kmain() {
     FILE_SYSTEM.initialize();
     //spin_sleep_ms(200);
     SCHEDULER.start();
-    loop {
-        shell::shell("$ ");
-    }
 }
 
 pub extern fn run_shell() {
-    loop { shell::shell("user0> "); }
+    loop {
+        shell::shell("$ ");
+    }
 }
 
 pub extern fn run_blinky() {
