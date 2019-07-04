@@ -59,7 +59,7 @@ impl VFat {
         offset: usize,
         mut buf: &mut [u8],
     ) -> io::Result<usize> {
-        let mut sector_start = self.data_start_sector as usize
+        let sector_start = self.data_start_sector as usize
             + (cluster.cluster_index() as usize - 2usize) * self.sectors_per_cluster as usize;
 
         let mut already_read: usize = 0;

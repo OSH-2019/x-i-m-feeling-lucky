@@ -1,8 +1,6 @@
 use std::fmt;
 use vfat::*;
 
-use self::Status::*;
-
 #[derive(Debug, PartialEq)]
 pub enum Status {
     /// The FAT entry corresponds to an unused (free) cluster.
@@ -36,7 +34,7 @@ impl FatEntry {
             x @ 0x00000002...0x0FFFFFEF => {
                 Status::Data(Cluster::from(x))
             }
-            cluster @ 0x0FFFFFF0...0x0FFFFFF6 => {
+            0x0FFFFFF0...0x0FFFFFF6 => {
                 Status::Reserved
             }
             0x0FFFFFF7 => {

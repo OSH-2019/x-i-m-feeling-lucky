@@ -1,4 +1,4 @@
-use std::{fmt, mem, io};
+use std::{fmt, mem};
 
 use traits::BlockDevice;
 use vfat::Error;
@@ -48,7 +48,7 @@ impl BiosParameterBlock {
     pub fn from<T: BlockDevice>(mut device: T, sector: u64)
                                 -> Result<BiosParameterBlock, Error> {
         let mut buf = [0u8; mem::size_of::<BiosParameterBlock>()];
-        let bytes_read = device.read_sector(sector, &mut buf);
+        let _ = device.read_sector(sector, &mut buf);
 
         let ebpb: BiosParameterBlock = unsafe { mem::transmute(buf) };
 //        let ebpb = Self::modify_byte_order(ebpb);

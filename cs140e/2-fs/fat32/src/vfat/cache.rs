@@ -47,6 +47,7 @@ impl CachedDevice {
         where T: BlockDevice + 'static
     {
         assert!(partition.sector_size >= device.sector_size());
+        assert_eq!(partition.sector_size % device.sector_size(), 0);
 
         CachedDevice {
             device: Box::new(device),
@@ -58,15 +59,13 @@ impl CachedDevice {
     /// Maps a user's request for a sector `virt` to the physical sector and
     /// number of physical sectors required to access `virt`.
     fn virtual_to_physical(&self, virt: u64) -> (u64, u64) {
-        if self.device.sector_size() == self.partition.sector_size {
-            (virt, 1)
-        } else if virt < self.partition.start {
+        if self.device.sector_size() == self.partition.sector_size
+            || virt < self.partition.start {
             (virt, 1)
         } else {
             let factor = self.partition.sector_size / self.device.sector_size();
-            let logical_offset = virt - self.partition.start;
-            let physical_offset = logical_offset * factor;
-            let physical_sector = self.partition.start + physical_offset;
+            let offset = (virt - self.partition.start) * factor;
+            let physical_sector = self.partition.start + offset;
             (physical_sector, factor)
         }
     }
@@ -85,7 +84,7 @@ impl CachedDevice {
         self.get(sector)?;
 
         match self.cache.get_mut(&sector) {
-            Some(mut x) => {
+            Some(x) => {
                 x.dirty = true;
                 Ok(x.data.as_mut_slice())
             }

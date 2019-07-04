@@ -63,7 +63,7 @@ impl MasterBootRecord {
     pub fn from<T: BlockDevice>(mut device: T) -> Result<MasterBootRecord, Error> {
 
         let mut buf = [0u8; MBR_SIZE];
-        let bytes_read = device.read_sector(0, &mut buf);
+        let _ = device.read_sector(0, &mut buf);
 
         let mbr: MasterBootRecord = unsafe { mem::transmute(buf)};
 
