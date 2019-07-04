@@ -62,11 +62,12 @@ impl<'a> Command<'a> {
     }
 }
 
-const GR: u8 = 0x0A; //\r
-const GN: u8 = 0x0D; //\n
-const BS: u8 = 0x08; //backspace
-const DE: u8 = 0x7F; //delete
-const BE: u8 = 0x07; //ring the bell
+const GR: u8 = 0x0A;   // \r
+const GN: u8 = 0x0D;   // \n
+const BS: u8 = 0x08;   // backspace
+const DE: u8 = 0x7F;   // delete
+const BE: u8 = 0x07;   // ring the bell
+const CTRL_U: u8 = 0x15;
 /// Read a command from users input
 fn readcmd(buf: &mut [u8]) -> &str {
     let mut len = 0;
@@ -74,27 +75,35 @@ fn readcmd(buf: &mut [u8]) -> &str {
         let byte = CONSOLE.lock().read_byte();
         match byte {
             GR | GN => {
-                //finish input
+                // finish input
                 kprintln!("");
                 break;
             }
             BS | DE if len > 0 => {
-                //delete a char
+                // delete a char
                 kprint!("{} {}", BS as char, BS as char);
                 len -= 1;
             }
             _ if len == buf.len() => {
-                //ring the bell if overflow
+                // ring the bell if overflow
                 kprint!("{}", BE as char);
             }
             byte @ b' '...b'~' => {
-                //normal char
+                // normal char
                 kprint!("{}", byte as char);
                 buf[len] = byte;
                 len += 1;
             }
+            CTRL_U => {
+                // clear line
+                for i in 0..len {
+                    buf[i] = 0;
+                    kprint!("{} {}", BS as char, BS as char);
+                }
+                len = 0;
+            }
             _ => {
-                //unrecognized char
+                // unrecognized char
                 kprint!("{}", BE as char);
             }
         }
@@ -215,9 +224,9 @@ fn command_ls(cmd: &Command, cwd: &PathBuf) {
                 }
                 kprint!(
                     "{}{}{}\t",
+                    if entry.is_dir() { 'd' } else { '-' },
                     if metadata.read_only() { 'r' } else { 'w' },
                     if metadata.hidden() { 'h' } else { 'v' },
-                    if entry.is_dir() { 'd' } else { 'f' },
                 );
                 let md_cr = metadata.created();
                 let md_mo = metadata.modified();
@@ -268,6 +277,10 @@ fn command_cat(cmd: &Command, cwd: &PathBuf) {
                     Err(e) => {
                         let index = e.valid_up_to();
                         let padding = index as i64 - n as i64;
+                        if -padding >= 4 {
+                            kprintln!("Error: invalid UTF-8");
+                            return;
+                        }
                         kprint!("{}", str::from_utf8(&buf[..index]).unwrap());
                         file.seek(SeekFrom::Current(padding)).unwrap();
                     }
