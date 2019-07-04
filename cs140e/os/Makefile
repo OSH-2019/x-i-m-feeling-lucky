@@ -1,5 +1,5 @@
 ASSIGNMENT_NAME := assignment1
-BASE_URL := https://web.stanford.edu/class/cs140e
+BASE_URL := https://cs140e.sergio.bz
 
 FILES_DIR := files
 FIRMWARE_DIR := $(FILES_DIR)/firmware
