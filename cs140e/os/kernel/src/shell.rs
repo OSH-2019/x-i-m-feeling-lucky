@@ -1,7 +1,6 @@
 use console::{kprint, kprintln, CONSOLE};
 use fat32::traits::{Dir, Entry, File, FileSystem, Metadata, Timestamp};
 use pi::atags::Atags;
-use stack_vec::StackVec;
 use std::io::{SeekFrom, Seek, Read};
 use std::path::PathBuf;
 use std::str;
@@ -26,7 +25,7 @@ enum Error {
 
 /// A structure representing a single shell command.
 struct Command<'a> {
-    args: StackVec<'a, &'a str>,
+    args: Vec<&'a str>,
 }
 
 impl<'a> Command<'a> {
@@ -37,10 +36,14 @@ impl<'a> Command<'a> {
     ///
     /// If `s` contains no arguments, returns `Error::Empty`. If there are more
     /// arguments than `buf` can hold, returns `Error::TooManyArgs`.
-    fn parse(s: &'a str, buf: &'a mut [&'a str]) -> Result<Command<'a>, Error> {
-        let mut args = StackVec::new(buf);
+    fn parse(s: &str) -> Result<Command, Error> {
+        let mut args = Vec::with_capacity(MAXARG);
         for arg in s.split(' ').filter(|a| !a.is_empty()) {
-            args.push(arg).map_err(|_| Error::TooManyArgs)?;
+            if args.len() == args.capacity() {
+                return Err(Error::TooManyArgs);
+            } else {
+                args.push(arg);
+            }
         }
 
         if args.is_empty() {
@@ -72,11 +75,16 @@ const CTRL_A: u8 = 0x01;
 const CTRL_B: u8 = 0x02;
 const CTRL_E: u8 = 0x05;
 const CTRL_F: u8 = 0x06;
+const CTRL_N: u8 = 0x0e;
+const CTRL_P: u8 = 0x10;
 const CTRL_U: u8 = 0x15;
 
 /// Read a command from users input
-fn readcmd(buf: &mut Vec<u8>) -> &str {
+fn readcmd(history: &mut Vec<Vec<u8>>) -> String {
+    let mut buf = Vec::with_capacity(MAXBUF);
     let mut cursor = 0;
+    let mut which_hist = history.len();
+
     loop {
         let byte = CONSOLE.lock().read_byte();
         match byte {
@@ -141,6 +149,42 @@ fn readcmd(buf: &mut Vec<u8>) -> &str {
                     cursor += 1;
                 }
             }
+            CTRL_N => {
+                // next history
+                if which_hist + 1 < history.len() {
+                    which_hist += 1;
+                } else {
+                    continue;
+                }
+
+                for _ in 0..buf.len() {
+                    kprint!("{} {}", BS as char, BS as char);
+                }
+
+                buf = history[which_hist].clone();
+                for ch in &buf[..] {
+                    kprint!("{}", *ch as char);
+                }
+                cursor = buf.len();
+            }
+            CTRL_P => {
+                // previous history
+                if which_hist > 0 {
+                    which_hist -= 1;
+                } else {
+                    continue;
+                }
+
+                for _ in 0..buf.len() {
+                    kprint!("{} {}", BS as char, BS as char);
+                }
+
+                buf = history[which_hist].clone();
+                for ch in &buf[..] {
+                    kprint!("{}", *ch as char);
+                }
+                cursor = buf.len();
+            }
             CTRL_U => {
                 // clear line
                 for _ in cursor..buf.len() {
@@ -174,6 +218,31 @@ fn readcmd(buf: &mut Vec<u8>) -> &str {
                             cursor += 1;
                         }
                     }
+                    up_down @ b'A' | up_down @ b'B' => {
+                        if up_down == b'A' && which_hist > 0 {
+                            // up
+                            which_hist -= 1;
+                        } else if up_down == b'B' && which_hist + 1 < history.len() {
+                            // down
+                            which_hist += 1;
+                        } else {
+                            kprint!("{}", BE as char);
+                            continue;
+                        }
+
+                        // clear line
+                        for _ in 0..buf.len() {
+                            kprint!("{} {}", BS as char, BS as char);
+                        }
+
+                        buf = history[which_hist].clone();
+                        let tmp = buf.len();
+                        buf.reserve(MAXBUF - tmp);
+                        for ch in &buf[..] {
+                            kprint!("{}", *ch as char);
+                        }
+                        cursor = buf.len();
+                    }
                     _ => {
                         kprint!("{}", BE as char);
                     }
@@ -185,7 +254,9 @@ fn readcmd(buf: &mut Vec<u8>) -> &str {
             }
         }
     }
-    str::from_utf8(&buf.as_slice()).unwrap()
+
+    history.push(buf.clone());
+    String::from_utf8(buf).unwrap_or_default()
 }
 
 const MAXBUF: usize = 512;
@@ -196,10 +267,11 @@ pub fn shell(prefix: &str) -> ! {
     kprintln!("{}", BANNER);
 
     let mut cwd = PathBuf::from("/");
+    let mut history = Vec::new();
+
     loop {
         kprint!("({}) {}", cwd.display(), prefix);
-        let mut cmd_buf = Vec::with_capacity(MAXBUF);
-        match Command::parse(readcmd(&mut cmd_buf), &mut [""; MAXARG]) {
+        match Command::parse(&readcmd(&mut history)) {
             Ok(cmd) => match cmd.path() {
                 "echo" => command_echo(&cmd),
                 "pwd" => command_pwd(&cmd, &cwd),
