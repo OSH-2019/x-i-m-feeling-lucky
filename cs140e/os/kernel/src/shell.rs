@@ -162,6 +162,8 @@ fn readcmd(history: &mut Vec<Vec<u8>>) -> String {
                 }
 
                 buf = history[which_hist].clone();
+                let tmp = buf.len();
+                buf.reserve(MAXBUF - tmp);
                 for ch in &buf[..] {
                     kprint!("{}", *ch as char);
                 }
@@ -180,6 +182,8 @@ fn readcmd(history: &mut Vec<Vec<u8>>) -> String {
                 }
 
                 buf = history[which_hist].clone();
+                let tmp = buf.len();
+                buf.reserve(MAXBUF - tmp);
                 for ch in &buf[..] {
                     kprint!("{}", *ch as char);
                 }
