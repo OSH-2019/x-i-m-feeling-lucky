@@ -19,7 +19,14 @@ pub enum Interrupt {
 #[repr(C)]
 #[allow(non_snake_case)]
 struct Registers {
-    // FIXME: Fill me in.
+    // according to BCM2837 Manual ch7
+    pending_basic: Reserved<u32>,
+    pending: [ReadVolatile<u32>; 2],
+    fiq: Reserved<u32>,
+    enable: [Volatile<u32>; 2],
+    enable_basic: Reserved<u32>,
+    disable: [Volatile<u32>; 2],
+    disable_basic: Reserved<u32>,
 }
 
 /// An interrupt controller. Used to enable and disable interrupts as well as to
@@ -38,16 +45,16 @@ impl Controller {
 
     /// Enables the interrupt `int`.
     pub fn enable(&mut self, int: Interrupt) {
-        unimplemented!()
+        self.registers.enable[int as usize / 32].write(1 << (int as usize) % 32);
     }
 
     /// Disables the interrupt `int`.
     pub fn disable(&mut self, int: Interrupt) {
-        unimplemented!()
+        self.registers.disable[int as usize / 32].write(1 << (int as usize) % 32);
     }
 
     /// Returns `true` if `int` is pending. Otherwise, returns `false`.
     pub fn is_pending(&self, int: Interrupt) -> bool {
-        unimplemented!()
+        self.registers.pending[int as usize / 32].write(1 << (int as usize) % 32);
     }
 }

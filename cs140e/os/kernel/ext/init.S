@@ -75,12 +75,16 @@ switch_to_el1:
     msr     SCTLR_EL1, x2
 
     // set up exception handlers
-    // FIXME: load `_vectors` addr into appropriate register (guide: 10.4)
-
+    // load `_vectors` addr into appropriate register(VBAR_EL1) (guide: 10.4)
+    adr     x2, _vectors
+    msr     VBAR_EL1, x2
     // change execution level to EL1 (ref: C5.2.19)
     mov     x2, #0x3c5
     msr     SPSR_EL2, x2
-    // FIXME: Return to EL1 at `set_stack`.
+    // Return to EL1 at `set_stack`.
+    adr     x2, set_stack
+    msr     ELR_EL2, x2
+    eret
 
 set_stack:
     // set the current stack pointer
@@ -104,12 +108,99 @@ go_kmain:
     b       halt
 
 context_save:
-    // FIXME: Save the remaining context to the stack.
+    // Save the remaining context to the stack.
+    // then x1 ... x29 Res lr x0 (240+16 = 256B)
+    stp     x29  [SP, #-16]! 
+    stp     x27, x28, [SP, #-16]!
+    stp     x25, x26, [SP, #-16]!
+    stp     x23, x24, [SP, #-16]!
+    stp     x21, x22, [SP, #-16]!
+    stp     x19, x20, [SP, #-16]!
+    stp     x17, x18, [SP, #-16]!
+    stp     x15, x16, [SP, #-16]!
+    stp     x13, x14, [SP, #-16]!
+    stp     x11, x12, [SP, #-16]!
+    stp     x9, x10, [SP, #-16]!
+    stp     x7, x8, [SP, #-16]!
+    stp     x5, x6, [SP, #-16]!
+    stp     x3, x4, [SP, #-16]!
+    stp     x1, x2, [SP, #-16]!
+    // then q0 ... q31 x1 ... x29 Res lr x0 (512+256 = 768B)
+    stp     q30, q31, [SP, #-32]!
+    stp     q28, q29, [SP, #-32]!
+    stp     q26, q27, [SP, #-32]!
+    stp     q24, q25, [SP, #-32]!
+    stp     q22, q23, [SP, #-32]!
+    stp     q20, q21, [SP, #-32]!
+    stp     q18, q19, [SP, #-32]!
+    stp     q16, q17, [SP, #-32]!
+    stp     q14, q15, [SP, #-32]!
+    stp     q12, q13, [SP, #-32]!
+    stp     q10, q11, [SP, #-32]!
+    stp     q8, q9, [SP, #-32]!
+    stp     q6, q7, [SP, #-32]!
+    stp     q4, q5, [SP, #-32]!
+    stp     q2, q3, [SP, #-32]!
+    stp     q0, q1, [SP, #-32]!
+    // finally ELR SPSR SP TPIDR q0 ... q31 x1 ... x29 Res lr x0 (32+768 = 800B)
+    mrs     x1, TPIDR_EL0
+    mrs     x2, SP_EL0
+    mrs     x3, SPSR_EL1
+    mrs     x4, ELR_EL1
+    stp     x2, x1, [SP, #-16]!
+    stp     x4, x3, [SP, #-16]!
+
+    // call the function handle_exception(info: Info, esr: u32, tf: &mut TrapFrame)
+    // info in x0, esr in x1, tf in x2(default 0 currently)    
+    mrs     x1, ESR_EL1
+    mov     x2, SP
+    mov     x28, lr //x28 is callee-saved reg
+    bl      handle_exception
+    mov     lr, x28
 
 .global context_restore
 context_restore:
-    // FIXME: Restore the context from the stack.
-
+    // Restore the context from the stack.
+    // first get those special regs
+    ldp     x1, x2, [SP], #16
+    ldp     x3, x4, [SP], #16
+    msr ELR_EL1, x1
+    msr SPSR_EL1, x2
+    msr SP_EL0, x3
+    msr TPIDR_EL0, x4
+    // then q regs
+    ldp     q0, q1, [SP], #32
+    ldp     q2, q3, [SP], #32
+    ldp     q4, q5, [SP], #32
+    ldp     q6, q7, [SP], #32
+    ldp     q8, q9, [SP], #32
+    ldp     q10, q11, [SP], #32
+    ldp     q12, q13, [SP], #32
+    ldp     q14, q15, [SP], #32
+    ldp     q16, q17, [SP], #32
+    ldp     q18, q19, [SP], #32
+    ldp     q20, q21, [SP], #32
+    ldp     q22, q23, [SP], #32
+    ldp     q24, q25, [SP], #32
+    ldp     q26, q27, [SP], #32
+    ldp     q28, q29, [SP], #32
+    ldp     q30, q31, [SP], #32
+    // then x regs
+    ldp     x1, x2, [SP], #16
+    ldp     x3, x4, [SP], #16
+    ldp     x5, x6, [SP], #16
+    ldp     x7, x8, [SP], #16
+    ldp     x9, x10, [SP], #16
+    ldp     x11, x12, [SP], #16
+    ldp     x13, x14, [SP], #16
+    ldp     x15, x16, [SP], #16
+    ldp     x17, x18, [SP], #16
+    ldp     x19, x20, [SP], #16
+    ldp     x21, x22, [SP], #16
+    ldp     x23, x24, [SP], #16
+    ldp     x25, x26, [SP], #16
+    ldp     x27, x28, [SP], #16
+    ldr     x29, [SP], #16
     ret
 
 #define HANDLER(source, kind) \
@@ -123,4 +214,8 @@ context_restore:
 
 .align 11
 _vectors:
-    // FIXME: Setup the 16 exception vectors.
+    // Setup the 16 exception vectors. named from src/trap/mod.rs
+    HANDLER(0, 0)   HANDLER(0, 1)   HANDLER(0, 2)   HANDLER(0, 3)
+    HANDLER(1, 0)   HANDLER(1, 1)   HANDLER(1, 2)   HANDLER(1, 3)
+    HANDLER(2, 0)   HANDLER(2, 1)   HANDLER(2, 2)   HANDLER(2, 3)
+    HANDLER(3, 0)   HANDLER(3, 1)   HANDLER(3, 2)   HANDLER(3, 3)

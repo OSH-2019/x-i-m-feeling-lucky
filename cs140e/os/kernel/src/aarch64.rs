@@ -51,3 +51,10 @@ pub fn nop() {
         asm!("nop" :::: "volatile");
     }
 }
+
+/// Wait for interrupt used in scheduling.
+pub fn wfi() {
+    unsafe {
+        asm!("wfi" :::: "volatile");
+    }
+}
