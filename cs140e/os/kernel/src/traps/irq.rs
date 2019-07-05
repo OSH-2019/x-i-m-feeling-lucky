@@ -1,5 +1,4 @@
 use pi::interrupt::Interrupt;
-use console::{kprint, kprintln, CONSOLE};
 
 use traps::TrapFrame;
 use pi::timer::tick_in;

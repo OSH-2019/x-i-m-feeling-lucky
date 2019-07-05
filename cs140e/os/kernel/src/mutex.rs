@@ -4,7 +4,9 @@ use std::cell::UnsafeCell;
 use std::ops::{DerefMut, Deref, Drop};
 use std::fmt;
 
+
 #[repr(align(32))]
+#[allow(dead_code)]
 pub struct Mutex<T> {
     data: UnsafeCell<T>,
     lock: AtomicBool,

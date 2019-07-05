@@ -7,7 +7,6 @@ use pi::interrupt::{Controller, Interrupt};
 
 pub use self::trap_frame::TrapFrame;
 
-use console::kprintln;
 use self::syndrome::Syndrome;
 use self::irq::handle_irq;
 use self::syscall::handle_syscall;
@@ -46,15 +45,15 @@ pub struct Info {
 pub extern fn handle_exception(info: Info, esr: u32, tf: &mut TrapFrame) {
     match info.kind {
         Kind::Synchronous => {
-            let My_Syndrome = Syndrome::from(esr);
-            match My_Syndrome {
+            let my_syndrome = Syndrome::from(esr);
+            match my_syndrome {
                 Syndrome::Svc(no) => {
                     handle_syscall(no, tf);
                 }
                 Syndrome::Brk(_) => {
                     tf.ELR += 4;
 
-                    // kprintln!("Got {:?} from {:?}", My_Syndrome, info.source);
+                    // kprintln!("Got {:?} from {:?}", my_syndrome, info.source);
                     shell::shell("kernel> ");
                 }
                 _ => {
@@ -64,12 +63,12 @@ pub extern fn handle_exception(info: Info, esr: u32, tf: &mut TrapFrame) {
             }
         }
         Kind::Irq => {
-            let My_controller = Controller::new();
-            let Interrupt_list = [Interrupt::Timer1, Interrupt::Timer3, Interrupt::Usb,
+            let my_controller = Controller::new();
+            let interrupt_list = [Interrupt::Timer1, Interrupt::Timer3, Interrupt::Usb,
                 Interrupt::Gpio0, Interrupt::Gpio1, Interrupt::Gpio2,
                 Interrupt::Gpio3, Interrupt::Uart];
-            for interrupt in Interrupt_list.iter() {
-                if My_controller.is_pending(*interrupt) {
+            for interrupt in interrupt_list.iter() {
+                if my_controller.is_pending(*interrupt) {
                     handle_irq(*interrupt, tf);
                 }
             }

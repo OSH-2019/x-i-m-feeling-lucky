@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Fault {
     AddressSize,
@@ -66,8 +68,8 @@ impl From<u32> for Syndrome {
     fn from(esr: u32) -> Syndrome {
         use self::Syndrome::*;
 
-        let EC = (esr >> 26);
-        let ISS = (esr & 0xFFFFFF);
+        let EC = esr >> 26;
+        let ISS = esr & 0xFFFFFF;
 
         match EC {
             0b000000 => Unknown,

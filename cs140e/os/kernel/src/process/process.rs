@@ -1,6 +1,5 @@
 use traps::TrapFrame;
 use process::{State, Stack};
-use std::mem::replace;
 use std::mem;
 
 /// Type alias for the type of a process ID.

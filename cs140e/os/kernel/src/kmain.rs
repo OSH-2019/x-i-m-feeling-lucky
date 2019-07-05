@@ -40,7 +40,6 @@ use fs::FileSystem;
 use process::GlobalScheduler;
 use process::sys_sleep;
 use pi::gpio::Gpio;
-use console::{kprint, kprintln, CONSOLE};
 use pi::timer::spin_sleep_ms;
 
 #[cfg(not(test))]

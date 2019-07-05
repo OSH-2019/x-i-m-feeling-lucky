@@ -1,5 +1,5 @@
 use std::collections::VecDeque;
-use console::{kprint, kprintln, CONSOLE};
+use console::kprintln;
 use mutex::Mutex;
 use process::{Process, State, Id};
 use traps::TrapFrame;

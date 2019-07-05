@@ -8,8 +8,6 @@ pub use self::state::State;
 pub use self::scheduler::{GlobalScheduler, TICK};
 pub use self::stack::Stack;
 
-use console::{kprint, kprintln, CONSOLE};
-
 //method for implement sleep(syscall 1)
 pub fn sys_sleep(ms: u32) -> u32 {
     let error: u64;

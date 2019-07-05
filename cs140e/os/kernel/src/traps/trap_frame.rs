@@ -1,5 +1,6 @@
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone)]
+#[allow(non_snake_case)]
 pub struct TrapFrame {
     pub ELR: u64,
     pub SPSR: u64,

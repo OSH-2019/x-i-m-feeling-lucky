@@ -1,7 +1,7 @@
 use traps::TrapFrame;
 use SCHEDULER;
 use pi::timer::current_time;
-use process::{State, Process, Id};
+use process::{State, Process};
 
 /// Sleep for `ms` milliseconds.
 ///
@@ -31,7 +31,7 @@ pub fn sleep(ms: u32, tf: &mut TrapFrame) {
 
 
 //according to the svc num to handle system call
-pub fn handle_syscall(num: u16, mut tf: &mut TrapFrame) {
+pub fn handle_syscall(num: u16, tf: &mut TrapFrame) {
     match num {
         //sleep syscall
         1 => {
