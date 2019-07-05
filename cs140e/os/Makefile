@@ -30,3 +30,4 @@ clean:
 	make clean -C kernel
 	cd volatile && cargo clean
 	cd pi && cargo clean
+	cd bootloader && rm -rf build target

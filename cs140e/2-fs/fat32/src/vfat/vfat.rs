@@ -44,10 +44,9 @@ impl VFat {
             device: dev,
             bytes_per_sector: ebpb.bytes_per_sector,
             sectors_per_cluster: ebpb.sectors_per_cluster,
-            sectors_per_fat: ebpb.sectors_per_fat() as u32,
+            sectors_per_fat: ebpb.sectors_per_fat(),
             fat_start_sector: start + ebpb.reserved_sectors as u64,
-            data_start_sector: start
-                + ebpb.reserved_sectors as u64
+            data_start_sector: start + ebpb.reserved_sectors as u64
                 + ebpb.sectors_per_fat() as u64 * ebpb.num_of_fat as u64,
             root_dir_cluster: Cluster::from(ebpb.root_dir_cluster_number),
         }))

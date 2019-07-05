@@ -52,10 +52,10 @@ impl FatEntry {
 
 
 impl fmt::Debug for FatEntry {
-fn fmt( & self, f: & mut fmt::Formatter) -> fmt::Result {
-f.debug_struct("FatEntry")
-.field("value", & self.0)
-.field("status", & self.status())
-.finish()
-}
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("FatEntry")
+            .field("value", &self.0)
+            .field("status", &self.status())
+            .finish()
+    }
 }
