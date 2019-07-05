@@ -12,8 +12,8 @@ use run_blinky;
 
 /// The `tick` time.
 // FIXME: When you're ready, change this to something more reasonable.
-//pub const TICK: u32 = 10 * 1000 * 1000; // us
-pub const TICK: u32 = ::std::u32::MAX;
+pub const TICK: u32 = 2 * 1000; // us
+//pub const TICK: u32 = ::std::u32::MAX;
 
 /// Process scheduler for the entire machine.
 #[derive(Debug)]

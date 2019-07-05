@@ -14,7 +14,6 @@ use console::{kprint, kprintln, CONSOLE};
 pub fn sys_sleep(ms: u32) -> u32 {
     let error: u64;
     let result: u32;
-    kprintln!("Begin sleep");
     unsafe {
         asm!("mov x0, $2
               svc 1
@@ -25,7 +24,6 @@ pub fn sys_sleep(ms: u32) -> u32 {
               : "x0", "x7")
     }
     //if executed succesfully, the content of x7 is 0
-    kprintln!("End sleep");
     assert_eq!(error, 0);
     result
 }

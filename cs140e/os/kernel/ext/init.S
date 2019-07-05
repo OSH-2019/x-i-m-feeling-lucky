@@ -110,7 +110,7 @@ go_kmain:
 context_save:
     // Save the remaining context to the stack.
     // then x1 ... x29 Res lr x0 (240+16 = 256B)
-    stp     x29, x29, [SP, #-16]! 
+    stp     x29, x30, [SP, #-16]! // put current lr in reserved
     stp     x27, x28, [SP, #-16]!
     stp     x25, x26, [SP, #-16]!
     stp     x23, x24, [SP, #-16]!
@@ -143,20 +143,22 @@ context_save:
     stp     q2, q3, [SP, #-32]!
     stp     q0, q1, [SP, #-32]!
     // finally ELR SPSR SP TPIDR q0 ... q31 x1 ... x29 Res lr x0 (32+768 = 800B)
-    mrs     x1, TPIDR_EL0
-    mrs     x2, SP_EL0
-    mrs     x3, SPSR_EL1
-    mrs     x4, ELR_EL1
-    stp     x2, x1, [SP, #-16]!
-    stp     x4, x3, [SP, #-16]!
+    mrs     x2, TPIDR_EL0
+    mrs     x1, SP_EL0
+    stp     x1, x2, [SP, #-16]!
+    mrs     x2, SPSR_EL1
+    mrs     x1, ELR_EL1
+    stp     x1, x2, [SP, #-16]!
 
     // call the function handle_exception(info: Info, esr: u32, tf: &mut TrapFrame)
     // info in x0, esr in x1, tf in x2(default 0 currently)    
-    mrs     x1, ESR_EL1
-    mov     x2, SP
-    mov     x28, x29 //x28 is callee-saved reg
+    mrs     x1, ESR_EL1 // esr
+    mov     x2, sp 
+
+    mov     x28, x30 // save lr to a callee-saved register
     bl      handle_exception
-    mov     x29, x28
+
+    mov     x30, x28 // get current lr from r28.
 
 .global context_restore
 context_restore:
@@ -205,11 +207,11 @@ context_restore:
 
 #define HANDLER(source, kind) \
     .align 7; \
-    stp     x29, x0, [SP, #-16]!; \
+    stp     x30, x0, [SP, #-16]!; \
     mov     x0, ##source; \
     movk    x0, ##kind, LSL #16; \
     bl      context_save; \
-    ldp     x29, x0, [SP], #16; \
+    ldp     x30, x0, [SP], #16; \
     eret
 
 .align 11
