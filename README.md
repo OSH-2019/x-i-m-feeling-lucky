@@ -148,7 +148,7 @@ $ sudo adduser $(whoami) dialout
 待传输完成后，执行命令：
 
 ``` bash
-screen /dev/ttyUSB0 115200 # if your TTY device differs, modify ttyUSB0 appropriately.
+$ screen /dev/ttyUSB0 115200 # if your TTY device differs, modify ttyUSB0 appropriately.
 ```
 
 Enjoy it!
