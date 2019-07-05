@@ -115,14 +115,6 @@ impl Dir {
     /// is returned.
     pub fn find<P: AsRef<OsStr>>(&self, name: P) -> io::Result<Entry> {
         use traits::{Dir, Entry};
-//        let name_str = match name.as_ref().to_str() {
-//            Some(x) => {
-//                x
-//            }
-//            _ => {
-//                return Err(io::Error::new(io::ErrorKind::InvalidInput, "InvalidInput"));
-//            }
-
         let name_str = name.as_ref().to_str().ok_or(io::Error::new(io::ErrorKind::InvalidInput, "Invalid Input"))?;
 
         self.entries()?.find(|item| {
@@ -130,7 +122,6 @@ impl Dir {
         }).ok_or(io::Error::new(io::ErrorKind::NotFound, "Not Found"))
     }
 }
-
 
 
 pub struct VFatIterator {
@@ -154,9 +145,7 @@ impl Iterator for VFatIterator {
                 0xE5 => {
                     continue;
                 }
-                _ => {
-
-                }
+                _ => {}
             }
 
             if unknown_entry.attributes.lfn() {
@@ -188,7 +177,6 @@ impl Iterator for VFatIterator {
                 let first_cluster = Cluster::from((entry.first_cluster_number_high as u32) << 16
                     | entry.first_cluster_number_low as u32);
 
-//                println!("name {}", &name);
                 return Some(if entry.attributes.directory() {
                     Entry::Dir(Dir {
                         name,

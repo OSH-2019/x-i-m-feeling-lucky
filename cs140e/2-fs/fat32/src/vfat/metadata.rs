@@ -22,7 +22,6 @@ impl Date {
     }
 }
 
-
 /// Time as represented in FAT32 on-disk structures.
 #[repr(C, packed)]
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
@@ -54,9 +53,6 @@ impl Time {
 pub struct Attributes(u8);
 
 impl Attributes {
-    //    READ_ONLY=0x01 HIDDEN=0x02 SYSTEM=0x04 VOLUME_ID=0x08
-//    DIRECTORY=0x10 ARCHIVE=0x20
-//    LFN=READ_ONLY|HIDDEN|SYSTEM|VOLUME_ID
     const READ_ONLY: u8 = 0x01;
     const HIDDEN: u8 = 0x02;
     const SYSTEM: u8 = 0x04;
@@ -65,29 +61,9 @@ impl Attributes {
     const ARCHIVE: u8 = 0x20;
     const LFN: u8 = Self::READ_ONLY | Self::HIDDEN | Self::SYSTEM | Self::VOLUME_ID;
 
-    //    pub fn read_only(&self) -> bool {
-//        self.0 == Self::READ_ONLY
-//    }
-//    pub fn hidden(&self) -> bool {
-//        self.0 == Self::HIDDEN
-//    }
-//    pub fn system(&self) -> bool {
-//        self.0 == Self::SYSTEM
-//    }
-//    pub fn volume_id(&self) -> bool {
-//        self.0 == Self::VOLUME_ID
-//    }
-//    pub fn directory(&self) -> bool {
-//        self.0 == Self::DIRECTORY
-//    }
-//    pub fn archive(&self) -> bool {
-//        self.0 == Self::ARCHIVE
-//    }
-
     pub fn lfn(&self) -> bool {
         self.0 == Self::LFN
     }
-
 
     pub fn read_only(&self) -> bool {
         (self.0 & Self::READ_ONLY) != 0
@@ -164,20 +140,6 @@ impl traits::Metadata for Metadata {
     fn hidden(&self) -> bool {
         self.attributes.hidden()
     }
-    //    fn system(&self) -> bool {
-//        self.attributes.system()
-//    }
-//    fn volume_id(&self) -> bool {
-//        self.attributes.volume_id()
-//    }
-//    fn directory(&self) -> bool {
-//        self.attributes.directory()
-//    }
-//    fn archive(&self) -> bool {
-//        self.attributes.archive()
-//    }
-//    fn lfn(&self) -> bool {
-//        self.attributes.lfn()
 
     fn created(&self) -> Self::Timestamp {
         self.created

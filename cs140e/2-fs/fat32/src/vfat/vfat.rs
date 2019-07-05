@@ -95,7 +95,7 @@ impl VFat {
             buf.resize(
                 buf_len + self.bytes_per_sector as usize * self.sectors_per_cluster as usize,
                 0,
-            );
+            ); // expand size
 
             already_read += self.read_cluster(current, 0, &mut buf[already_read..])?;
 
@@ -122,8 +122,8 @@ impl VFat {
         let cluster_index = cluster.cluster_index();
         let entries_per_sector = self.bytes_per_sector / mem::size_of::<FatEntry>() as u16;
 
-        let fat_index = cluster_index / entries_per_sector as usize;
-        let fat_offset = cluster_index % entries_per_sector as usize;
+        let fat_index = cluster_index / entries_per_sector as usize; // sector count
+        let fat_offset = cluster_index % entries_per_sector as usize; // offset of entries in a sector
 
         if fat_index >= self.sectors_per_fat as usize {
             return Err(io::Error::new(
