@@ -56,23 +56,23 @@
 
 安装 Rust
 
-```
-curl https://sh.rustup.rs -sSf | sh
+```bash
+$ curl https://sh.rustup.rs -sSf | sh
 ```
 
 更改 Rust 工具链版本
 
-```
-cargo install --version 0.3.10 xargo
-rustup default nightly-2018-01-09
-rustup component add rust-src
+```bash
+$ cargo install --version 0.3.10 xargo
+$ rustup default nightly-2018-01-09
+$ rustup component add rust-src
 ```
 
 ### 安装 aarch64-none-elf 工具
 
 ``` bash
-wget https://cs140e.sergio.bz/files/aarch64-none-elf-linux-x64.tar.gz
-tar -xzvf aarch64-none-elf-linux-x64.tar.gz
+$ wget https://cs140e.sergio.bz/files/aarch64-none-elf-linux-x64.tar.gz
+$ tar -xzvf aarch64-none-elf-linux-x64.tar.gz
 ```
 
 将`aarch64-none-elf/bin`目录添加到`PATH`环境变量即可。
@@ -80,8 +80,8 @@ tar -xzvf aarch64-none-elf-linux-x64.tar.gz
 ### 安装 ttywrite 工具
 
 ``` bash
-cd cs140e/1-shell/ttywrite
-cargo install
+$ cd cs140e/1-shell/ttywrite
+$ cargo install
 ```
 
 > 若出现类似`error: non-string literals in attributes, or string literals in top-level positions, are experimental`的错误，需按照提示在某文件中添加`#![feature(attr_literals)]`。要添加这一行的文件需要根据报错的文件位置来确定，具体方法为，若报错的文件为`*/src/../..*rs`，则在`*/src/lib.rs`中添加`#![feature(attr_literals)]`。若下文中出现同样报错，再次按此操作即可。
@@ -100,9 +100,9 @@ device_tree=
 获取`kernel8.img`：
 
 ``` bash
-cd cs140e/os/bootloader
-make
-cp build/bootloader.bin kernel8.img
+$ cd cs140e/os/bootloader
+$ make
+$ cp build/bootloader.bin kernel8.img
 ```
 
 > 也可以在`cs140e/os/files_used_to_boot`文件夹下直接找到这 4 个文件。
@@ -122,10 +122,28 @@ Micro SD 卡插入树莓派中，使用 USB to TTL 转接线将树莓派和电�
 在`kernel`目录下执行命令：
 
 ``` bash
-make install
+$ make install
 ```
 
-> 如果出现访问`/dev/ttyUSB*`权限不足的问题，需要将您当前的用户添加到`/dev/ttyUSB*`所在组`diaout`内：`sudo adduser your_user_name dialout`（替换`your_user_name` ）。
+如果出现访问`/dev/ttyUSB*`权限不足的问题，需要将您当前的用户添加到`/dev/ttyUSB*`所在组中：
+
+首先获取其所在组：
+
+``` bash
+$ ls -la /dev/ttyUSB*
+```
+若输出结果如下，说明其所在组为`dialout`。
+
+``` 
+crw-rw---- 1 root dialout 188, 0 Jul  5 19:43 /dev/ttyUSB0
+```
+
+将当前用户添加到该组中：
+
+``` bash
+$ sudo adduser $(whoami) dialout
+```
+注销并重新登录，再次使用`make install`传输`kernel.bin`文件。
 
 待传输完成后，执行命令：
 
