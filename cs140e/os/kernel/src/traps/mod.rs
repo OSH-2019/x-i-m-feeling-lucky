@@ -54,7 +54,7 @@ pub extern fn handle_exception(info: Info, esr: u32, tf: &mut TrapFrame) {
                 Syndrome::Brk(_) => {
                     tf.ELR += 4;
 
-                    kprintln!("Got {:?} from {:?}", My_Syndrome, info.source);
+                    // kprintln!("Got {:?} from {:?}", My_Syndrome, info.source);
                     shell::shell("kernel> ");
                 }
                 _ => {

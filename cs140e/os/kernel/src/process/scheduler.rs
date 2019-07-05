@@ -12,7 +12,7 @@ use run_blinky;
 
 /// The `tick` time.
 // FIXME: When you're ready, change this to something more reasonable.
-pub const TICK: u32 = 2 * 1000; // us
+pub const TICK: u32 = 100 * 1000; // us
 //pub const TICK: u32 = ::std::u32::MAX;
 
 /// Process scheduler for the entire machine.
@@ -62,7 +62,8 @@ impl GlobalScheduler {
         Controller::new().enable(Interrupt::Timer1);
         tick_in(TICK);
 
-        kprintln!("Beginning");
+//        kprintln!("Beginning");
+
         // Switch to process.
         unsafe {
             asm!(
