@@ -40,7 +40,7 @@ impl GlobalScheduler {
         self.0.lock().as_mut().expect("scheduler uninitialized").switch(new_state, tf)
     }
 
-    pub fn remove(&mut self, remove_id: Id, tf: &mut TrapFrame) -> Option<Id> {
+    pub fn remove(&self, remove_id: Id, tf: &mut TrapFrame) -> Option<Id> {
         self.0.lock().as_mut().expect("scheduler uninitialized").remove(remove_id,tf)
     }
 
@@ -175,13 +175,22 @@ impl Scheduler {
             Some(remove_id)
         }
         else {
+            let mut rmindex = None;
             for (index,process) in self.processes.iter().enumerate() {
                 if process.get_id() == remove_id {
-                    self.processes.remove(index);
-                    return Some(remove_id)
+                    //self.processes.remove(index);
+                    rmindex = Some(index);
+                    break;
+                    //return Some(remove_id)
                 }
             }
-            None
+            match rmindex {
+                Some(index) => {
+                    self.processes.remove(index);
+                    Some(index as u64)
+                },
+                None => None,
+            }
         }
     }
 }
