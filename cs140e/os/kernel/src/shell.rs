@@ -80,6 +80,7 @@ const BE: u8 = 0x07;
 const ESC: u8 = 0x1B;
 const CTRL_A: u8 = 0x01;
 const CTRL_B: u8 = 0x02;
+const CTRL_D: u8 = 0x04;
 const CTRL_E: u8 = 0x05;
 const CTRL_F: u8 = 0x06;
 const CTRL_N: u8 = 0x0e;
@@ -140,6 +141,20 @@ fn readcmd(history: &mut Vec<Vec<u8>>) -> String {
                 if cursor > 0 {
                     kprint!("{}", BS as char);
                     cursor -= 1;
+                }
+            }
+            CTRL_D => {
+                // delete
+                if cursor == buf.len() {
+                    continue;
+                }
+                buf.remove(cursor);
+                for ch in &buf[cursor..] {
+                    kprint!("{}", *ch as char);
+                }
+                kprint!(" {}", BS as char);
+                for _ in cursor..buf.len() {
+                    kprint!("{}", BS as char);
                 }
             }
             CTRL_E => {
@@ -438,10 +453,19 @@ fn command_cat(cmd: &Command, cwd: &PathBuf) {
                             return;
                         }
                         kprint!("{}", str::from_utf8(&buf[..index]).unwrap());
-                        file.seek(SeekFrom::Current(padding)).unwrap();
+                        match file.seek(SeekFrom::Current(padding)) {
+                            Ok(_) => {}
+                            Err(_) => {
+                                kprintln!("Error reading file: {}", e);
+                                return;
+                            }
+                        }
                     }
                 },
-                Err(e) => kprintln!("Error reading file: {}", e),
+                Err(e) => {
+                    kprintln!("Error reading file: {}", e);
+                    return;
+                }
             }
         }
     }
