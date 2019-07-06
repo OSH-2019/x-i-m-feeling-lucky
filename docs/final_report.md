@@ -516,13 +516,15 @@ pub fn is_pending(&self, int: Interrupt) -> bool {}
 
 本项目实现的是对 MBR 分区格式下的 FAT32 文件系统的读取能力。
 
-#### FAT32 结构
+#### FAT32 文件系统
+
+##### FAT32 结构
 
 MBR 分区格式下 FAT32 文件系统的物理结构层次如下：
 
 ![Disk Layout](final_report.assets/mbr-fat-diagram.svg)
 
-#### Master Boot Record
+##### Master Boot Record
 
 如图所示，MBR 位于磁盘上 0 号扇区（一个扇区大小一般是 512字节），MBR 结构如下。
 
@@ -534,11 +536,11 @@ MBR 分区格式下 FAT32 文件系统的物理结构层次如下：
 
 其中最重要的两项是 Relative Sector，表示从磁盘开头到这个分区起始地址的偏移。
 
-#### Extended Bios Parameter Block
+##### Extended Bios Parameter Block
 
 FAT32 分区的第一个扇区的内容是 Extended Bios Parameter Block（EBPB），这个结构定义了 FAT 文件系统的结构层次。里面最重要的一项之一是“number of  reserved sectors”，表示从 FAT32 文件系统起始到 File Allocation Table 的扇区数。
 
-#### Entry & Cluster Chain
+##### Entry & Cluster Chain
 
 一个 FAT 里面有众多记录（Entry），在 FAT32 文件系统中，一个 Entry 是 32 位宽，这也是其名字里面“32”的来源。在（一个或多个）FAT 后是大量 Clusters，Entry`n`和 Cluster`n`对应，32 位宽的 Entry 内部是后面的 Clusters 之间的组织关系，Cluster 存储着数据。
 
@@ -552,11 +554,91 @@ Entry 的值的意义如下。
 
 举其中一个 Cluster Chain 的例子，Entry 3 的值是 0x05，表示下一个 Cluster 是 Cluster 5，Entry 5 的值是 6，表示下一个 Cluster 是 6，而 Entry 6 的值是 EOC，所以这个 Cluster Chain 是 3 -> 5 -> 6。
 
-一个 Cluster Chain 既可能是文件也可能是目录，
+一个 Cluster Chain 既可能是文件也可能是目录，目录可以看成是若干个目录 Entry 的排列，每个 Entry 最重要的信息有：名字、修改时间、创建时间、访问时间、是文件还是目录、起始 Sector 的编号。
 
+为了能够使用长度大于 11 个字符的文件名，FAT32 引入了 Long File Name (LFN) Entry，具体来说，一个 Directory Entry 既可以是常规的 Entry，也可以是 LFN Entry。
 
+#### 代码结构
 
+File System 这一部分得益于老师给的详细的说明文档和清晰的框架，只需要一点点按说明完成各个结构体定义、函数编写即可，其实是个体力活。在名为`fat32`Rust 项目中，主要的源代码文件有：
 
+```
+─── src
+    ├── mbr.rs
+    └── vfat
+        ├── cache.rs
+        ├── cluster.rs
+        ├── dir.rs
+        ├── ebpb.rs
+        ├── entry.rs
+        ├── fat.rs
+        ├── file.rs
+        ├── metadata.rs
+        ├── shared.rs
+        └── vfat.rs
+```
+
+下简要介绍每个文件的主要功能。
+
+##### mbr.rs
+
+定义`MasterBootRecord`结构体，并实现了从块设备中获得`MasterBootRecord`的`from()`方法。
+
+##### cache.rs
+
+定义`CachedDevice`结构体，它利用`HashMap`实现了对块设备中 Sector 的缓存访问。
+
+##### cluster.rs
+
+定义`Cluster`结构体，由于 Entry 的 32 位宽的高 4 位总是被忽略，因此`Cluster`的`from()`方法只需要将`raw_num`的高 4 位变成 0 即可。
+
+##### dir.rs
+
+定义`Dir`、`VFatRegularDirEntry`、`VFatLfnDirEntry`，实现了能遍历一个目录所有 Entry 的`entries()`方法。
+
+##### ebpb.rs
+
+和`mbr.rs`非常类似：定义`BiosParameterBlock`结构体，并实现了从块设备中获得`BiosParameterBlock`的`from()`方法。
+
+##### entry.rs
+
+提供对一个不知道是目录还是文件的 Entry 的获取 name、metadata 的方法，以及尝试作为目录、尝试作为文件（都返回`Option<...>`）的方法。
+
+##### fat.rs
+
+定义`FatEntry`结构体，根据其内容返回相应 Entry 的含义，即“翻译”了下图：
+
+![1562420043133](final_report.assets/1562420043133.png)
+
+##### file.rs
+
+定义`File`结构体，主要实现了读文件的`read()`方法和文件内寻址的`seek()`方法。
+
+##### metadata.rs
+
+根据 Entry 的信息返回修改时间、创建时间、访问时间、是否是 LFN、是否只读、是否是目录等信息。
+
+##### shared.rs
+
+用于安全地分享对某个对象的“mutable”访问。
+
+##### vfat.rs
+
+是工作量最大的一个目录，定义了`VFat`结构体，它就是 FAT32 文件系统本身，包含了从其定义亦可看出：
+
+``` rust
+pub struct VFat {
+    pub device: CachedDevice,
+    pub bytes_per_sector: u16,
+    pub sectors_per_cluster: u8,
+    pub sectors_per_fat: u32,
+    pub fat_start_sector: u64,
+    pub data_start_sector: u64,
+    pub root_dir_cluster: Cluster,
+}
+```
+
+主要提供了读取 Cluster、读取 Cluster Chain 的方法。
 
 ### Interrupt & Exception
 
