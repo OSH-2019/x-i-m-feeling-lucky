@@ -6,6 +6,7 @@ use std::str;
 use FILE_SYSTEM;
 #[cfg(not(test))]
 use ALLOCATOR;
+use SCHEDULER;
 
 use process::{sys_sleep,sys_kill};
 
@@ -522,3 +523,16 @@ fn command_kill(cmd: &Command) {
         }
     }
 }
+
+
+fn command_ps(cmd: &Command) {
+    match cmd.args.len() {
+        1 => {
+            kprintln!("Current process: {:?}",SCHEDULER.current());
+        }
+        _ => {
+            kprintln!("Too many parameters.");
+        }
+    }
+}
+

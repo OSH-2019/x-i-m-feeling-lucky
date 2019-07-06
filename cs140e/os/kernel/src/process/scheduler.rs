@@ -44,6 +44,10 @@ impl GlobalScheduler {
         self.0.lock().as_mut().expect("scheduler uninitialized").remove(remove_id,tf)
     }
 
+    pub fn current(&self) -> Vec<Id> {
+        self.0.lock().as_mut().expect("scheduler uninitialized").current()
+    }
+
     /// Initializes the scheduler and starts executing processes in user space
     /// using timer interrupt based preemptive scheduling. This method should
     /// not return under normal conditions.
@@ -192,5 +196,10 @@ impl Scheduler {
                 None => None,
             }
         }
+    }
+
+
+    fn current(&self) -> Vec<u64> {
+        self.processes.iter().map(|process| process.get_id() as u64)
     }
 }
