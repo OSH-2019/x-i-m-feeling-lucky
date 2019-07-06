@@ -169,16 +169,16 @@ impl Scheduler {
     }
 
     fn remove(&mut self, remove_id: Id, tf: &mut TrapFrame) -> Option<Id> {
-        if self.processes.get(0).get_id() == remove_id {
+        if self.processes.get(0).unwrap().get_id() == remove_id {
             self.switch(State::Ready, tf);
             self.processes.pop_back();
             Some(remove_id)
         }
         else {
-            for x in self.processes.iter() {
-                if x.get_id() == remove_id {
-                    self.processes.remove(x.enumerate());
-                    Some(remove_id)
+            for (index,process) in self.processes.iter().enumerate() {
+                if process.get_id() == remove_id {
+                    self.processes.remove(index);
+                    return Some(remove_id)
                 }
             }
             None
