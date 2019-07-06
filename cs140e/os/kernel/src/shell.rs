@@ -8,7 +8,7 @@ use FILE_SYSTEM;
 use ALLOCATOR;
 use SCHEDULER;
 
-use process::{sys_sleep,sys_kill};
+use process::{sys_sleep, sys_kill};
 
 const BANNER: &str = r#"
  _               _
@@ -512,7 +512,15 @@ fn command_kill(cmd: &Command) {
             match cmd.args[1].parse() {
                 Ok(x) => {
                     kprintln!("Pi will kill process {}.",x);
-                    sys_kill(x);
+                    match sys_kill(x) {
+                        true => {
+                            kprintln!("Successfully kill process {}.",x);
+                        }
+
+                        false => {
+                            kprintln!("Failed kill process {}.",x);
+                        }
+                    }
                 }
                 Err(_) => {
                     kprintln!("Wrong parameter.");
