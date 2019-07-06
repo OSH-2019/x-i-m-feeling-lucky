@@ -40,6 +40,10 @@ impl GlobalScheduler {
         self.0.lock().as_mut().expect("scheduler uninitialized").switch(new_state, tf)
     }
 
+    pub fn remove(&mut self, remove_id: Id) -> Option<Id> {
+        self.0.lock().as_mut().expect("scheduler uninitialized").remove(remove_id)
+    }
+
     /// Initializes the scheduler and starts executing processes in user space
     /// using timer interrupt based preemptive scheduling. This method should
     /// not return under normal conditions.
@@ -162,5 +166,22 @@ impl Scheduler {
         }
         //return the current id is ok
         self.current
+    }
+
+    fn remove(&mut self, remove_id: Id, tf: &mut TrapFrame) -> Option<Id> {
+        if self.processes.get(0).get_id() == remove_id {
+            self.switch(State::Ready, tf);
+            self.processes.pop_back();
+            Some(remove_id)
+        }
+        else {
+            for x in self.processes.iter() {
+                if x.get_id() == remove_id {
+                    self.processes.remove(x.enumerate());
+                    Some(remove_id)
+                }
+            }
+            None
+        }
     }
 }

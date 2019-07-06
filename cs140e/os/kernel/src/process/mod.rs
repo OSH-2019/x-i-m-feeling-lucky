@@ -25,3 +25,20 @@ pub fn sys_sleep(ms: u32) -> u32 {
     assert_eq!(error, 0);
     result
 }
+
+pub fn sys_kill(kill_id: u32) -> bool {
+    let error: u64;
+    unsafe {
+        asm!("mov x0, $1
+              svc 1
+              mov $0, x7"
+              : "=r"(error)
+              : "r"(kill_id)
+              : "x7")
+    }
+    //if executed succesfully, the content of x7 is 0
+    match error {
+        0 => true,
+        _ => false,
+    }
+}

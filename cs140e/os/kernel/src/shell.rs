@@ -314,6 +314,7 @@ pub fn shell(prefix: &str) -> ! {
                 "cat" => command_cat(&cmd, &cwd),
                 "allocator" => command_allocator(&cmd),
                 "sleep" => command_sleep(&cmd),
+                "kill" => command_kill(&cmd),
                 _ => {
                     kprintln!("unknown command: {}", cmd.path());
                 }
@@ -488,6 +489,28 @@ fn command_sleep(cmd: &Command) {
                 Ok(x) => {
                     kprintln!("Pi will sleep {} ms.",x);
                     sys_sleep(x);
+                }
+                Err(_) => {
+                    kprintln!("Wrong parameter.");
+                }
+            }
+        }
+        _ => {
+            kprintln!("Too many parameters.");
+        }
+    }
+}
+
+fn command_kill(cmd: &Command) {
+    match cmd.args.len() {
+        1 => {
+            kprintln!("Missing parameter.");
+        }
+        2 => {
+            match cmd.args[1].parse() {
+                Ok(x) => {
+                    kprintln!("Pi will kill process {}.",x);
+                    sys_kill(x);
                 }
                 Err(_) => {
                     kprintln!("Wrong parameter.");
