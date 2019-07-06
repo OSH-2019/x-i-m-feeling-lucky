@@ -41,7 +41,7 @@ impl GlobalScheduler {
     }
 
     pub fn remove(&mut self, remove_id: Id, tf: &mut TrapFrame) -> Option<Id> {
-        self.0.lock().as_mut().expect("scheduler uninitialized").remove(remove_id)
+        self.0.lock().as_mut().expect("scheduler uninitialized").remove(remove_id,tf)
     }
 
     /// Initializes the scheduler and starts executing processes in user space

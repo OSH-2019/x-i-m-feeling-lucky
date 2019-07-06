@@ -40,8 +40,8 @@ pub fn handle_syscall(num: u16, tf: &mut TrapFrame) {
         // kill syscall
         2 => {
             tf.x1_x29[6] = match SCHEDULER.remove(tf.x0, tf) {
-                Some(_) => 0
-                None => 1
+                Some(_) => 0,
+                None => 1,
             };
         }
         //currently unexist, set x7 to 1
