@@ -1,6 +1,5 @@
 # 结题报告
 
-
 ## 项目名称
 
 <big>**Implementing an OS for Raspberry Pi 3 in Rust**</big>
@@ -43,12 +42,6 @@
 
 ## 项目架构
 
-### 整体架构
-
-
-
-
-
 ### 工作原理
 
 ![principle](final_report.assets/principle.png)
@@ -78,11 +71,9 @@ device_tree=
 
 ### Hardware
 
-# Chapter 1 硬件与准备工作
+#### 准备工作
 
-### 一、准备工作
-
-#### 1. Volatile存储访问（```os/volatile/src/```）
+##### Volatile存储访问（`os/volatile/src/`）
 
 在我们的项目中，会有很多对于硬件层面存储的修改（寄存器层次），而在这种层次上的直接修改有两方面需要考虑的问题：
 
@@ -125,7 +116,7 @@ pub struct Reserved<T>(T);
 
 
 
-#### 2. XMODEM协议（```1-shell/xmodem/src/```）
+##### XMODEM协议（`1-shell/xmodem/src/`）
 
 XMODEM是在1978年由Ward Christensen创建的用于调制解调器纠错的协议，使用奇偶校验作为查错控制的方法。在我们的项目中采用该协议来向树莓派传输文件。为此，我们需要使用rust来实现该协议的接收端。
 
@@ -206,13 +197,13 @@ pub fn receive_with_progress<R, W>(from: R, mut into: W, f: ProgressFn) -> io::R
 
 该协议使用于```ttywrite```部分。
 
-#### 3. 使用TTYwrite实现设备交互（```1-shell/ttywrite/src/```）
+##### 使用TTYwrite实现设备交互（`1-shell/ttywrite/src/`）
 
 为了从编译源码的机器上将编译后的内核等其它数据依照XMODEM协议传输到树莓派机器中，我们借助了命令行应用```ttywrite```。
 
 ```ttywrite```命令可以根据波特率、字大小等设置对指定文件进行串行传输。其具体用法在工作原理中已进行说明。
 
-### 二、树莓派BCM2837设备驱动（```os/pi/```）
+#### 树莓派BCM2837设备驱动（`os/pi/`）
 
 为了使操作系统内核可以跟树莓派底层硬件交互，使操作系统功能的实现和调试成为可能，我们必须根据树莓派本身的硬件配置实现一系列设备驱动。
 
@@ -225,7 +216,7 @@ pub fn receive_with_progress<R, W>(from: R, mut into: W, f: ProgressFn) -> io::R
 
 在实现的过程中我们仔细参考了 [BCM2837 ARM Peripherals Manual](https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf)
 
-#### 1. 系统计时器（```timer.rs```）
+##### 系统计时器（`timer.rs`）
 
 实现ARM system timer设备驱动主要具有以下作用
 
@@ -285,7 +276,7 @@ pub fn tick_in(us: u32) {}
 
 
 
-#### 2. GPIO引脚（```gpio.rs```）
+##### GPIO引脚（`gpio.rs`）
 
 在我们的树莓派机器上有40个通用IO（GPIO）引脚按两行排列，为了通过UART实现同树莓派的数据传输与控制，我们为GPIO引脚编写了驱动程序。
 
@@ -386,7 +377,7 @@ pub fn level(&mut self) -> bool {}
 
 
 
-#### 3. UART接口（```uart.rs```）
+##### UART接口（`uart.rs`）
 
 UART，指通用异步收发传输器，将要传输的资料在串行通信和并行通信之间加以转换。作为把并行输入信号转成串行输出信号的芯片，它通常被集成于其它通讯接口的连结上。在我们的项目中实现的shell将同在树莓派上的UART设备进行数据传输。我们可以通过UART传输任何类型的数据，在本项目中通常是文本消息（命令、文本文件、消息文本等）。
 
@@ -448,7 +439,7 @@ pub fn read_byte(&mut self) -> u8 {}
 
 该单元主要在shell的实现中使用。
 
-#### 4. 中断控制（```interrupt.rs```）
+##### 中断控制（`interrupt.rs`）
 
 在AArch64中，中断和异常的主要区别在于中断的产生是异步的，由外部设备响应事件而生成。随之产生的中断流如下：
 
@@ -671,7 +662,7 @@ ARMv8 中 exception 有4种种类：
 
 一共16种 exception, 中断矢量表也一共有16个入口地址。幸运的是，我们可以：
 
-```ARM
+``` assembly
 #define HANDLER(source, kind) \
     .align 7; \
     stp     x30, x0, [SP, #-16]!; \
@@ -841,6 +832,9 @@ struct Scheduler {
 Scheduler 的方法有：add() 和 switch() ,上文已经介绍过。GlobalScheduler 的 add() 和 switch() 则是前二者的封装，分别被操作系统和中断服务程序调用，完成进程的增加和上下文切换工作。GlobalScheduler::Start() 功能也如上文所述，完成创建系统进程和开始第一个过程的工作。
 
 ### Shell
+
+#### 简介
+
 Shell 的作用是将前面的工作整合并呈现出来。实现的命令有 `echo`, `cat`, `ls`, `cd`, `pwd` 和 `sleep`。其中 `cat` 命令可以打印 UTF-8 文本，`sleep` 通过系统调用实现。
 
 #### Shell 的主要组成部分
@@ -1023,7 +1017,7 @@ CS140e 课程和我们这学期的 OSH 课程在内容上高度相关，只是�
 
 这一点其实和前一点“对课程所作的拓展有限”基本上是一个问题。CS140e 课程中，老师给了相当友好的框架，学生只需要补充留空的函数、完成结构体定义、适当编写自己的辅助函数，因此不需要太强的 Rust 工程能力。但是当我们想对课程做拓展的时候，需要我们自己定义一堆接口，自己完成软件和软件之间、软件和硬件之间的交互，就会意识到我们的能力还有很大欠缺。
 
-### 补充
+#### 补充
 
 在大作业的前期我们遇到了 Rust 工具链版本的问题。
 
@@ -1037,10 +1031,6 @@ CS140e 课程和我们这学期的 OSH 课程在内容上高度相关，只是�
 $ cargo install --version 0.3.10 xargo # 使用旧版交叉编译工具 Xargo
 $ rustup default nightly-2018-01-09 # Rust 版本切换到 2018-01-09 (1.25.0)
 ```
-
-## 
-
-
 
 
 ## 参考资料
