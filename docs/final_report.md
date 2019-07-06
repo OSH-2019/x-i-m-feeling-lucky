@@ -84,6 +84,30 @@ device_tree=
 
 ### File System
 
+本项目实现的是对 MBR 分区格式下的 FAT32 文件系统的读取能力。
+
+#### FAT32 结构
+
+MBR 分区格式下 FAT32 文件系统的物理结构层次如下：
+
+![Disk Layout](final_report.assets/mbr-fat-diagram.svg)
+
+#### Master Boot Record
+
+如图所示，MBR 位于磁盘上 0 号扇区（一个扇区大小一般是 512字节），MBR 结构如下。
+
+![1562418127464](final_report.assets/1562418127464.png)
+
+从图中可以看出，一个 MBR 包含四个分区表记录（这也是为什么 MBR 分区格式最多只能有 4 个主分区），每个分区表的结构如下：
+
+![1562418189457](final_report.assets/1562418189457.png)
+
+其中最重要的两项是 Relative Sector，表示从磁盘开头到这个分区起始地址的偏移。
+
+#### Extended Bios Parameter Block
+
+FAT32 分区的第一个扇区的内容是 Extended Bios Parameter Block（EBPB），这个结构定义了 FAT 文件系统的结构层次。
+
 ### Interrupt & Exception
 
 #### ARM 对 Interrupt & Exception 的分类
