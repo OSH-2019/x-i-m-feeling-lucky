@@ -114,7 +114,7 @@
 
 ##### 1. 第一阶段 bootloader
 
-树莓派上电后，GPU 核心启动，GPU 开始执行第一阶段的 bootloader (`bootloader.bin`)。bootloader 读取 SD 卡，将第二阶段的 bootloader (`start.elf`) 加载到 GPU，`start.elf`开始执行。
+树莓派上电后，GPU 核心启动，GPU 开始执行第一阶段的 bootloader (`bootcode.bin`)。bootloader 读取 SD 卡，将第二阶段的 bootloader (`start.elf`) 加载到 GPU，`start.elf`开始执行。
 
 ##### 2. 第二阶段 bootloader
 
