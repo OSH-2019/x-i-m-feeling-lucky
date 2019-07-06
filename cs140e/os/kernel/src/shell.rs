@@ -316,6 +316,7 @@ pub fn shell(prefix: &str) -> ! {
                 "allocator" => command_allocator(&cmd),
                 "sleep" => command_sleep(&cmd),
                 "kill" => command_kill(&cmd),
+                "ps" => command_ps(&cmd),
                 _ => {
                     kprintln!("unknown command: {}", cmd.path());
                 }

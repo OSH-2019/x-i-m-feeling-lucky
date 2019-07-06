@@ -200,6 +200,10 @@ impl Scheduler {
 
 
     fn current(&self) -> Vec<u64> {
-        self.processes.iter().map(|process| process.get_id() as u64)
+        let mut vec = Vec::new();
+        for ids in self.processes.iter().map(|process| process.get_id() as u64){
+            vec.push(ids);
+        }
+        vec
     }
 }
