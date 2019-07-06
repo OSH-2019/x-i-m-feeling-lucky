@@ -136,7 +136,7 @@ ARMv8 中 exception 有4种种类：
 
 为了完成上下文切换工作，需要将当前各寄存器入栈。入栈顺序有要求，图解：
 
-![](final.assets/trap-frame.svg)
+![](final_report.assets/trap-frame.svg)
 
 保存之后，这个栈包含了恢复中断前程序执行的所有内容，称之为 trap frame。
 
@@ -232,7 +232,7 @@ pub enum State {
 
 换入换出的各种具体工作，如寄存器值的保存则由 init.S 文件中的 context_save,context_restore 段的汇编代码来完成。
 
-![](final.assets/round-robin.svg)
+![](final_report.assets/round-robin.svg)
 
 scheduler 还有函数 add() ，作用是往队列中增加一个新进程，并分配进程 Id。
 
