@@ -83,6 +83,7 @@ const CTRL_B: u8 = 0x02;
 const CTRL_D: u8 = 0x04;
 const CTRL_E: u8 = 0x05;
 const CTRL_F: u8 = 0x06;
+const CTRL_K: u8 = 0x0b;
 const CTRL_N: u8 = 0x0e;
 const CTRL_P: u8 = 0x10;
 const CTRL_U: u8 = 0x15;
@@ -169,6 +170,12 @@ fn readcmd(history: &mut Vec<Vec<u8>>) -> String {
                 if cursor < buf.len() {
                     kprint!("{}{}{}", ESC as char, '[', 'C');
                     cursor += 1;
+                }
+            }
+            CTRL_K => {
+                kprint!("{}[K", ESC as char);
+                for _ in cursor..buf.len() {
+                    buf.remove(cursor);
                 }
             }
             CTRL_N => {
