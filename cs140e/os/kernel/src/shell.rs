@@ -436,7 +436,7 @@ fn command_ls(cmd: &Command, cwd: &PathBuf) {
 }
 
 fn command_cat(cmd: &Command, cwd: &PathBuf) {
-    for path in &cmd.args[1..] {
+    'outer: for path in &cmd.args[1..] {
         let good_path = FILE_SYSTEM.canonicalize(cwd.join(path)).unwrap();
         let mut file = match FILE_SYSTEM.open_file(good_path) {
             Ok(thing) => thing,
@@ -458,7 +458,7 @@ fn command_cat(cmd: &Command, cwd: &PathBuf) {
                         let padding = index as i64 - n as i64;
                         if -padding >= 4 {
                             kprintln!("Error: invalid UTF-8");
-                            return;
+                            continue 'outer;
                         }
                         kprint!("{}", str::from_utf8(&buf[..index]).unwrap());
                         match file.seek(SeekFrom::Current(padding)) {
