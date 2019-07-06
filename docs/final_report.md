@@ -841,8 +841,20 @@ struct Scheduler {
 Scheduler 的方法有：add() 和 switch() ,上文已经介绍过。GlobalScheduler 的 add() 和 switch() 则是前二者的封装，分别被操作系统和中断服务程序调用，完成进程的增加和上下文切换工作。GlobalScheduler::Start() 功能也如上文所述，完成创建系统进程和开始第一个过程的工作。
 
 ### Shell
+Shell 的作用是将前面的工作整合并呈现出来。实现的命令有 `echo`, `cat`, `ls`, `cd`, `pwd` 和 `sleep`。其中 `cat` 命令可以打印 UTF-8 文本，`sleep` 通过系统调用实现。
 
+#### Shell 的主要组成部分
+##### `readcmd` 函数
+读取一行命令，返回一个 `String`。此函数还实现了部分 emacs-style 行编辑功能和命令历史记录功能。
 
+这里实现的 emacs-style 的行编辑功能主要是一些 <kbd>Ctrl</kbd> 快捷键，他们都有对应的 `ascii` 码，所以实现起来比较容易。对于方向键，由于按下方向键时键盘会向终端发送对应的 ANSI 转义序列，如 `↑` 对应的是 `<ESC>[A`，所以读到 `<ESC>[A` 就进行向上选择历史记录的操作。
+对于命令历史功能，在进入 shell 之后初始化一个 `Vec` 来存储历史记录，在输入命令的过程中如果按了上或下键，则清空当前输入的的命令，打印相应的历史命令。
+
+##### 命令处理函数
+命令的实现主要是使用写好的接口。
+- `sleep` 使用了 `sys_sleep` 系统调用。
+- `ls` 使用了文件系统的 `Dir`, `Entry`, `Metadata`, `Timestamp` 等接口。使用 `FileSystem` 的 `open_dir` 方法，得到一个 `Dir`，再用 `Dir` 的 `entries` 方法得到目录的内容。
+- `cat` 使用了 `FileSystem` 的 `open_file` 方法，返回一个 `File`, 由于 `File` 实现了 `io::Read` trait，所以可以用 `read` 来读取内容。
 
 
 
