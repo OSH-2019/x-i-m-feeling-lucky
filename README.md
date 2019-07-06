@@ -10,16 +10,14 @@
 ### A. [Final] Implementing an OS for Raspberry Pi 3 in Rust
 ### B. Enhanced Distributed File System
 
-
-
 ## 记录
 - 3.20 [第一次讨论](discussion/20190320.md)初步分析两个项目；
 - 3.27 ~ 3.31 完成[调研报告](docs/research.md)；
 - 4.3 [第二次讨论](discussion/20190403.md)确定可行性报告内容和分工；
-
 - 4.3 ~ 4.9 完成[可行性报告](docs/feasibility.md)；
-
 - 4.24 [中期汇报](docs/mid_term_report.pptx)；
+- 7.3 ~ 7.6 完成[结题报告](docs/final_report.md)；
+- 7.7 [结题汇报](docs/final_report.pptx)。
 
 ## 课程规划
 
@@ -76,6 +74,13 @@ $ tar -xzvf aarch64-none-elf-linux-x64.tar.gz
 ```
 
 将`aarch64-none-elf/bin`目录添加到`PATH`环境变量即可。
+
+### 克隆项目
+
+``` bash
+$ git clone https://github.com/OSH-2019/x-i-m-feeling-lucky
+$ cd x-i-m-feeling-lucky
+```
 
 ### 安装 ttywrite 工具
 
@@ -152,4 +157,6 @@ $ screen /dev/ttyUSB0 115200 # if your TTY device differs, modify ttyUSB0 approp
 ```
 
 Enjoy it!
+
+![img](README.assets/cs140e.gif)
 

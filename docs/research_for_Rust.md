@@ -13,7 +13,7 @@
                 - [Memory management](#memory-management)
                 - [Ownership](#ownership)
             - [2.2.3 当前基于 Rust 的 OS 的对比分析](#223-当前基于-rust-的-os-的对比分析)
-            - [2.2.4 Re!dox OS](#224-redox-os)
+            - [2.2.4 Redox OS](#224-redox-os)
     - [3. 立项依据](#3-立项依据)
         - [3.1 项目名称](#31-项目名称)
         - [3.2 项目介绍](#32-项目介绍)
@@ -288,3 +288,4 @@ Redox 不仅仅是个内核，而是个全功能的操作系统，它提供了�
 - [rust-embedded/rust-raspi3-OS-tutorials: Rust bare-metal and OS tutorials on the Raspberry Pi 3](https://github.com/rust-embedded/rust-raspi3-OS-tutorials)
 
 - [Stanford: An experimental course on operating systems](https://www.reddit.com/r/cs140e/)
+
