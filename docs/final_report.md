@@ -357,15 +357,205 @@ Redox 是一个使用 rust 编写的通用的类 Unix 操作系统。它的内�
 
 ### File System
 
+### Interrupt & Exception
 
+#### ARM 对 Interrupt & Exception 的分类
 
+ARMv8 CPU 有4种 Exception Level：
 
+- EL0 (user) - 用户进程 Typically used to run untrusted user applications.
+- EL1 (kernel) - 操作系统内核 Typically used to run privileged operating system kernels.
+- EL2 (hypervisor) - 虚拟机 Typically used to run virtual machine hypervisors.
+- EL3 (monitor) - 底层硬件 Typically used to run low-level firmware.
+
+树莓派启动时处于 EL3 ，切换至 EL2 后加载操作系统内核，在内核中切换至 EL1 。ELR,SPSR,SP 这样的系统寄存器每个 EL 都有独立的一套。
+
+从高等级 EL 切换到低等级只有一种方式：eret 指令，即 exception return。从低等级陷入到高等级只有一种情况：触发exception。两种情况下CPU都会自动保存或恢复运行状态。
+
+ARMv8 中 exception 有4种种类：
+
+- Synchronous - 进程可以触发的，比如系统调用 an exception resulting from an instruction like svc or brk
+- IRQ - 外部中断，比如计时中断 an asynchronous interrupt request from an external source
+- FIQ - 比 IRQ 高级的外部中断 an asynchronous fast interrupt request from an external source
+- SError - 系统错误 a “system error” interrupt
+
+也有4种来源：
+
+- Same exception level when source SP = SP_EL0
+- Same exception level when source SP = SP_ELx
+- Lower exception level running on AArch64
+- Lower exception level running on AArch32
+
+一共16种 exception, 中断矢量表也一共有16个入口地址。幸运的是，我们可以：
+
+```ARM
+#define HANDLER(source, kind) \
+    .align 7; \
+    stp     x30, x0, [SP, #-16]!; \
+    mov     x0, ##source; \
+    movk    x0, ##kind, LSL #16; \
+    bl      context_save; \
+    ldp     x30, x0, [SP], #16; \
+    eret
+```
+
+定义统一的处理函数。然后在矢量表的对应位置放置 HANDLER(source, kind)，汇编器就会展开成相应汇编。
+
+#### exception 处理
+
+先介绍 trap frame。
+
+##### trap frame
+
+为了完成上下文切换工作，需要将当前各寄存器入栈。入栈顺序有要求，图解：
+
+![](final.assets/trap-frame.svg)
+
+保存之后，这个栈包含了恢复中断前程序执行的所有内容，称之为 trap frame。
+
+- ELR ：中断返回地址，就是进程当前执行到的地址
+- SPSR ：中断前的一些程序信息
+- SP ：中断前栈指针
+
+为了能在rust 里访问这个栈，并方便的进行数据处理，TrapFrame 是作者为保存所有寄存器的状态所设立的结构体。可见，结构体里的每个域的内存位置，刚好对应每个需要保存的寄存器的入栈位置。
+
+```rust
+pub struct TrapFrame {
+    pub ELR: u64,
+    pub SPSR: u64,
+    pub SP: u64,
+    pub TPIDR: u64,
+    pub q0_q32: [u128; 32],
+    pub x1_x29: [u64; 29],
+    pub __res: u64,
+    pub x30: u64,
+    pub x0: u64
+}
+```
+
+##### exception 处理的过程
+
+HANDLER(source, kind) 会调用汇编的 context_save ,完成各寄存器入栈工作，然后调用 handle_exception 函数。后者解析参数，知道exception的种类和来源之后，分类处理。系统调用 syscall 则调用 handle_syscall 函数，中断则调用 handle_irq 函数。
+
+完成后，返回到汇编的 context_restore ,完成出栈工作。如果是计时中断完成上下文切换，则此时的栈内容，即 trap_frame 已经换成新进程的了。最后返回到 HANDLER(source, kind) ，eret 到原来的程序或新进程里。
+
+#### syscall
+
+目前只实现了一种系统调用：sleep. 可在 shell 里调用。
+
+更多系统调用可待来日升级。
+
+#### interrupt
+
+目前亦只特殊处理一种中断：为进程调度服务的计时中断。发生时，会调用 GlobalScheduler::switch() 完成一次进程切换，并设置下一个计时中断。
+
+更多中断处理可待来日升级。
 
 ### Process
 
+>A process is a program in execution.
 
+一个比较完善的 OS 里，一个进程的全部信息、数据包括：
 
+- 内存中分配的栈与堆
+- 内存中的代码
+- 虚拟地址空间
+- 所有寄存器的值
 
+为了进程的安全，管理，调度，操作系统可见的进程信息还包括：
+
+- Id
+- 调度状态 Scheduling state
+
+而 cs140e 中，由于还要一部分后续课程没有发布，所以我们仅仅按照已经发布的部分完成了：
+
+- 栈
+- 代码
+- 所有寄存器的值
+- Id
+- 调度状态 Scheduling state
+
+尚未实现的堆与虚拟内存空间，作者将会在未来的课程实验里发布，也将是这个操作系统改良的方向之一。
+
+#### Stack
+
+按照作者的实现，初始化时为每一个进程分配的栈空间固定为 1MiB。
+
+#### State
+
+操作系统维护的进程状态有三种，State 这个 enum 的定义如下：
+
+```rust
+pub enum State {
+    Ready,                  /// The process is ready to be scheduled.
+    Waiting(EventPollFn),   /// The process is waiting on an event to occur before it can be scheduled.
+    Running,                /// The process is currently running.
+}
+```
+
+分别对应程序可以换入，程序正在等待某个事件发生，程序正在执行。其中 Waiting 一项有一个参数 EventPollFn ，是一个操作系统判断事件是否已经发生的函数。
+
+#### Scheduler
+
+依照作者的实验要求，调度算法采用 round-robin 时间片轮转。每一个时间片的大小暂定为100ms。未来考虑加入更好更灵活的调度方案。
+
+实现调度算法，Scheduler 维护了一个进程的队列，队列中包含所有的 Ready 与 Waiting 的进程。
+
+每当 Timer1 的计时中断发生时，也就意味着当前进程的时间片耗尽，系统跳转到中断服务程序，后者调用 Scheduler::switch()。Scheduler 首先将换出进程入队，然后会不断将队头进程出队，如果那个进程状态为 Waiting ，并且 EventPollFn 为 false, 则将其挪到队尾。状态为 Ready 或 Waiting 且 EventPollFn 为 true,则选择其作为换入进程，如此往复。
+
+换入换出的各种具体工作，如寄存器值的保存则由 init.S 文件中的 context_save,context_restore 段的汇编代码来完成。
+
+![](final.assets/round-robin.svg)
+
+scheduler 还有函数 add() ，作用是往队列中增加一个新进程，并分配进程 Id。
+
+#### 难点：第一个进程的建立
+
+第一步总是最难的。在系统里没有进程时，上下文切换会出错。因此必须在内核中调用 GlobalScheduler::Start() 函数来创建、启动第一个进程，并切换到那个进程里。
+
+GlobalScheduler::Start() 具体实现上，可以启动多个进程。调用 Process::new() 建立新进程，把进程的起始地址、栈指针、中断等级信息填入进程的 trap_frame 的对应 ELR,SP,SPSR 域，调用 add() 函数，就往系统中增加了新的进程。调用 Controller::enable() 函数开中断，并调用 tick_in(TICK) 函数设置下一个时间片的中断，再通过中断服务例程的 context_restore 来完成换入。
+
+执行了 GlobalScheduler::Start() 之后，系统便开始在 EL0 运行第一个进程：shell。
+
+#### 具体实现
+
+Process 结构体的定义如下：
+
+```rust
+pub struct Process {
+    pub trap_frame: Box<TrapFrame>,
+    pub stack: Stack,
+    pub state: State,
+}
+```
+
+trap_frame 域为一个 Box 智能指针，指向前文提到的 trap frame 结构体。stack 域即为进程的栈，state 域为进程的状态。
+
+Process 实现的方法有：
+
+- new() -> Option<Process>
+
+  尝试创建一个进程，并尝试为其分配栈空间，设置其状态。
+
+- get_id(&self) -> u64
+
+  读取其 trap_frame 域的 TPIDR 域，获得其进程 Id。
+
+- is_ready(&mut self) -> bool
+
+  判断这个进程可不可以被 Scheduler 换入。
+
+调度器代码分为两层。上层为 GlobalScheduler 结构体，包含下层的 Scheduler 结构体。Scheduler 定义如下：
+
+```rust
+struct Scheduler {
+    processes: VecDeque<Process>,  //进程队列
+    current: Option<Id>,           //拥有时间片的进程Id
+    last_id: Option<Id>,           //最近加入队列的进程Id
+}
+```
+
+Scheduler 的方法有：add() 和 switch() ,上文已经介绍过。GlobalScheduler 的 add() 和 switch() 则是前二者的封装，分别被操作系统和中断服务程序调用，完成进程的增加和上下文切换工作。GlobalScheduler::Start() 功能也如上文所述，完成创建系统进程和开始第一个过程的工作。
 
 ### Shell
 
@@ -571,4 +761,3 @@ CS140e 课程和我们这学期的 OSH 课程在内容上高度相关，只是�
 -  [BrokenThorn Entertainment](http://www.brokenthorn.com/Resources/OSDevIndex.html)
 
 -  [Redox Book](https://doc.redox-os.org/book/)
-
