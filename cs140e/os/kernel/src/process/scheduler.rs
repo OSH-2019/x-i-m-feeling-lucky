@@ -40,7 +40,7 @@ impl GlobalScheduler {
         self.0.lock().as_mut().expect("scheduler uninitialized").switch(new_state, tf)
     }
 
-    pub fn remove(&mut self, remove_id: Id) -> Option<Id> {
+    pub fn remove(&mut self, remove_id: Id, tf: &mut TrapFrame) -> Option<Id> {
         self.0.lock().as_mut().expect("scheduler uninitialized").remove(remove_id)
     }
 
