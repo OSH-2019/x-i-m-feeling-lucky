@@ -78,7 +78,437 @@ device_tree=
 
 ### Hardware
 
+# Chapter 1 硬件与准备工作
 
+### 一、准备工作
+
+#### 1. Volatile存储访问（```os/volatile/src/```）
+
+在我们的项目中，会有很多对于硬件层面存储的修改（寄存器层次），而在这种层次上的直接修改有两方面需要考虑的问题：
+
+1. 安全性问题
+
+   对存储内容的读写涉及到许多操作系统安全性的问题，尤其是对于硬件。所以这方面需要提供一个良定义的抽象结构。
+
+2. 编译器优化问题
+
+   考虑下面的代码示例：
+
+   ```rust
+   fn f() {
+       let mut x = 0;
+       let y = &mut x;
+       *y = 10;
+   }
+   ```
+
+   编译器的“优化”可能直接删除最后一句对```*y```的赋值，因为之后没有对其的访问。出于相同的原因，编译器也有可能将对```x```、```y```甚至```f()```的声明给完全删除掉。
+
+   一般来说，这有助于加速程序而不影响输出，但对于硬件方面它可能带来一些出乎意料的结果。如果```y```指向一个只写的内存映射寄存器，那么最后的赋值语句仍可能在不去读取```y```的情况下产生一些效应。这种时候我们不希望编译器优化这种访存语句。
+
+   
+
+对于上述问题的解决依赖于对```Volatile```内存访问的实现，这种类型为我们提供了安全访问的接口并避免了编译器的错误优化。
+
+我们提供了三种```Volatile```数据类型和一个```Reserved```类型作为封装，兼顾了只读、只写和读写和保留的情形。
+
+```rust
+//给只读类型的封装，实现read方法
+pub struct ReadVolatile<T>(T);
+//给只写类型的封装，实现write方法
+pub struct WriteVolatile<T>(T);
+//兼顾只读和只写的封装，实现read与write方法
+pub struct Volatile<T>(T);
+//保留类型封装，项目中对这些封装不予读写
+pub struct Reserved<T>(T);
+```
+
+
+
+#### 2. XMODEM协议（```1-shell/xmodem/src/```）
+
+XMODEM是在1978年由Ward Christensen创建的用于调制解调器纠错的协议，使用奇偶校验作为查错控制的方法。在我们的项目中采用该协议来向树莓派传输文件。为此，我们需要使用rust来实现该协议的接收端。
+
+XMODEM是一种二进制、半双工的协议，它直接传输与接收字节，而且在任何时刻，支持传输者或接收者发送消息但不能同时传输。另外，它是基于数据包传输的协议：数据被分割成128字节大小的数据包。
+
+在传输的某些时机中，有一些特殊字节作为信号字节存在，定义如下：
+
+```rust
+const SOH: u8 = 0x01;		//
+const EOT: u8 = 0x04;       //end of transfer
+const ACK: u8 = 0x06;       //positive acknowledgement
+const NAK: u8 = 0x15;       //negative acknowledgement
+const CAN: u8 = 0x18;       //cancel
+```
+
+一次完整的传输过程与描述如下：
+
+![xmodem-diagram](final_report.assets/xmodem-diagram.svg)
+
+为了传输一个数据包，传送方需要：
+
+1. 发送一个```SOH```字节
+2. 发送数据包编号
+3. 发送数据包编号的补码形式
+4. 发送包体
+5. 发送数据包校验和
+6. 读取来自接收方的字节：
+   - 若为```NAK```（未接收成功），则重试上述流程直到10次为止
+   - 若为```ACK```（接收成功），则发送下一个包体
+
+要接受一个数据包，接受方需要：
+
+1. 等待发送方的```SOH```或```EOT```字节
+   - 收到其它字节时取消传输
+   - 收到```EOT```字节（传输完毕）,则完成传输
+2. 读取下一个字节并与当前数据包编号比较，若不同则取消传输
+3. 读取下一个字节并与当前数据包编号的补码比较，若不同则取消传输
+4. 读取128字节大小的数据包
+5. 计算数据包的校验和
+6. 读取下一个字节并与计算得到的校验和进行比较
+   - 若不同，则发送```NAK```字节请求重新传输
+   - 否则发送```ACK```表明完毕，准备接收下一个包体
+
+在传输过程中，双方均可以发送```CAN```字节直接退出传输过程
+
+而当所有的数据包传送完毕时，进入传输终止阶段，此时传送方（接受方）：
+
+1. 发送一个```EOT```字节
+2. 等待```NAK```（发送```NAK```），不同则错误退出
+3. 发送第二个```EOT```
+4. 等待```ACK```（发送```ACK```），不同则错误退出
+
+
+
+在我们的项目中，XODEM描述如下：
+
+```rust
+pub struct Xmodem<R> {
+    packet: u8,
+    inner: R,
+    started: bool,
+    progress: ProgressFn
+}
+
+```
+
+为其实现的一系列接口如下，是对上述具体过程的实现：
+
+```rust
+//使用XMODEM协议对数据进行发送，若数据大小不是128字节的倍数，则补零后进行发送
+pub fn transmit_with_progress<R, W>(mut data: R, to: W, f: ProgressFn) -> io::Result<usize>
+    where W: io::Read + io::Write, R: io::Read{}
+//使用XMODEM协议对数据进行接收，返回应为128的倍数的数据大小
+pub fn receive_with_progress<R, W>(from: R, mut into: W, f: ProgressFn) -> io::Result<usize>
+	where R: io::Read + io::Write, W: io::Write{}
+
+```
+
+该协议使用于```ttywrite```部分。
+
+#### 3. 使用TTYwrite实现设备交互（```1-shell/ttywrite/src/```）
+
+为了从编译源码的机器上将编译后的内核等其它数据依照XMODEM协议传输到树莓派机器中，我们借助了命令行应用```ttywrite```。
+
+```ttywrite```命令可以根据波特率、字大小等设置对指定文件进行串行传输。其具体用法在工作原理中已进行说明。
+
+### 二、树莓派BCM2837设备驱动（```os/pi/```）
+
+为了使操作系统内核可以跟树莓派底层硬件交互，使操作系统功能的实现和调试成为可能，我们必须根据树莓派本身的硬件配置实现一系列设备驱动。
+
+根据项目的需求，要考虑的外围设备有：
+
+- 系统计时器
+- GPIO引脚
+- URAT串口
+- 中断控制
+
+在实现的过程中我们仔细参考了 [BCM2837 ARM Peripherals Manual](https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf)
+
+#### 1. 系统计时器（```timer.rs```）
+
+实现ARM system timer设备驱动主要具有以下作用
+
+- 获取系统当前时间，完成定时之类的任务，方便异步信息传输。
+- 产生计时中断，生成时间片进而控制进程调度。
+
+我们所实现的简易计时器驱动只考虑相关的几个寄存器：
+
+```rust
+pub const IO_BASE: usize = 0x3F000000;
+const TIMER_REG_BASE: usize = IO_BASE + 0x3000;
+//Timer相关寄存器
+struct Registers {
+    CS: Volatile<u32>,
+    CLO: ReadVolatile<u32>,
+    CHI: ReadVolatile<u32>,
+    COMPARE: [Volatile<u32>; 4]
+}
+//The Raspberry Pi ARM system timer.
+pub struct Timer {
+    registers: &'static mut Registers
+}
+```
+
+其中用到的寄存器作用如下：
+
+| 寄存器名称 | 描述                      |
+| ---------- | ------------------------- |
+| CS         | 系统计时器控制/状态寄存器 |
+| CLO        | 时钟计数器低32位          |
+| CHI        | 时钟计数器高32位          |
+| COMPARE    | 系统计时器比较0-3         |
+
+我们为Timer实现了```new```、```read```和```tick_in```方法：
+
+```rust
+//生成一个新的计时器
+pub fn new() -> Timer {} 
+//返回时钟计数器中64位的值
+pub fn read(&self) -> u64 {}
+//根据中断寄存器内的值设置时间为us微秒的计时中断
+pub fn tick_in(&mut self, us: u32) {}
+```
+
+同时利用这些函数我们实现了一些供高层次调用的接口函数：
+
+```rust
+//返回以毫秒为单位的系统当前时间
+pub fn current_time() -> u64 {}
+//旋转等待us微秒
+pub fn spin_sleep_us(us: u64) {}
+//旋转等待ms毫秒
+pub fn spin_sleep_ms(ms: u64) {}
+////根据中断寄存器内的值设置时间为us微秒的计时中断
+pub fn tick_in(us: u32) {}
+```
+
+
+
+#### 2. GPIO引脚（```gpio.rs```）
+
+在我们的树莓派机器上有40个通用IO（GPIO）引脚按两行排列，为了通过UART实现同树莓派的数据传输与控制，我们为GPIO引脚编写了驱动程序。
+
+根据我们的用途来看，每个GPIO引脚都是独立的，利用状态机的思想，我们可以将每个引脚的状态设置如下：
+
+```rust
+states! {
+    Uninitialized, //声明，但未初始化
+    Input, 		   //输入状态，可以读取接收的高低电平
+    Output, 	   //输出状态，可以设置或清空输出引脚
+    Alt			   //设置为其它替代函数，本项目中不使用
+}
+```
+
+而其转换关系给出如下：
+
+![gpio-diagram](final_report.assets/gpio-diagram.svg)
+
+考虑GPIO相关的寄存器后，其定义如下：
+
+```rust
+const GPIO_BASE: usize = IO_BASE + 0x200000;
+//引脚函数定义
+pub enum Function {
+    Input = 0b000,
+    Output = 0b001,
+    Alt0 = 0b100,
+    Alt1 = 0b101,
+    Alt2 = 0b110,
+    Alt3 = 0b111,
+    Alt4 = 0b011,
+    Alt5 = 0b010
+}
+//GPIO相关寄存器
+struct Registers {
+    FSEL: [Volatile<u32>; 6],
+    __r0: Reserved<u32>,
+    SET: [WriteVolatile<u32>; 2],
+    __r1: Reserved<u32>,
+    CLR: [WriteVolatile<u32>; 2],
+    __r2: Reserved<u32>,
+    LEV: [ReadVolatile<u32>; 2],
+    __r3: Reserved<u32>,
+    EDS: [Volatile<u32>; 2],
+    __r4: Reserved<u32>,
+    REN: [Volatile<u32>; 2],
+    __r5: Reserved<u32>,
+    FEN: [Volatile<u32>; 2],
+    __r6: Reserved<u32>,
+    HEN: [Volatile<u32>; 2],
+    __r7: Reserved<u32>,
+    LEN: [Volatile<u32>; 2],
+    __r8: Reserved<u32>,
+    AREN: [Volatile<u32>; 2],
+    __r9: Reserved<u32>,
+    AFEN: [Volatile<u32>; 2],
+    __r10: Reserved<u32>,
+    PUD: Volatile<u32>,
+    PUDCLK: [Volatile<u32>; 2],
+}
+//GPIO
+pub struct Gpio<State> {
+    pin: u8,
+    registers: &'static mut Registers,
+    _state: PhantomData<State>
+}
+```
+
+其中用到的寄存器作用如下：
+
+| 寄存器名称 | 描述                       |
+| ---------- | -------------------------- |
+| FSEL       | 存储引脚当前执行的函数编号 |
+| SET        | 输出模式下启动引脚         |
+| CLR        | 输出模式下关闭引脚         |
+| LEV        | 存储当前引脚接收到的电平   |
+
+我们为GPIO实现了以下方法，主要在UART单元中使用：
+
+```rust
+//创建一个未初始化的，编号为pin（1-52）的GPIO实例
+pub fn new(pin: u8) -> Gpio<Uninitialized> {}
+//GPIO引脚状态转换，内部函数
+fn transition<S>(self) -> Gpio<S> {}
+//转换到编号为function的Alt状态
+pub fn into_alt(self, function: Function) -> Gpio<Alt> {}
+//转换到输出状态
+pub fn into_output(self) -> Gpio<Output> {}
+//转换到输入状态
+pub fn into_input(self) -> Gpio<Input> {}
+//输出状态下启动引脚
+pub fn set(&mut self) {}
+//输出状态下关闭引脚
+pub fn clear(&mut self) {}
+//输入状态下检测电平高低，高电平返回true，低电平返回false
+pub fn level(&mut self) -> bool {}
+```
+
+
+
+#### 3. UART接口（```uart.rs```）
+
+UART，指通用异步收发传输器，将要传输的资料在串行通信和并行通信之间加以转换。作为把并行输入信号转成串行输出信号的芯片，它通常被集成于其它通讯接口的连结上。在我们的项目中实现的shell将同在树莓派上的UART设备进行数据传输。我们可以通过UART传输任何类型的数据，在本项目中通常是文本消息（命令、文本文件、消息文本等）。
+
+UART作为异步传输设备，不使用时钟信号进行同步，故类似于XMODEM协议，它传输的数据添加了起始和终止位来进行传输，并可以设置1位奇偶校验位。
+
+![UARTdata](final_report.assets/UARTdata.png)
+
+而下图非常形象地展示了并串并的数据传输过程。
+
+![UART1](final_report.assets/UART1.png)
+
+这种方式具有使用数据线数量少、无需时钟信号、常规化的优点，但也有数据帧过小、波特率需要两端匹配的缺点。不过对于本项目中实现的shell来说，UART已经绰绰有余。
+
+我们实现的UART驱动定义如下：
+
+```rust
+const MU_REG_BASE: usize = IO_BASE + 0x215040;
+const AUX_ENABLES: *mut Volatile<u8> = (IO_BASE + 0x215004) as *mut Volatile<u8>;
+//状态位表示
+enum LsrStatus {
+    DataReady = 1,
+    TxAvailable = 1 << 5,
+}
+//UART相关寄存器
+struct Registers {
+    AUX_MU_IO_REG:  Volatile<u32>,
+    AUX_MU_IER_REG: Volatile<u32>,
+    AUX_MU_IIR_REG: Volatile<u32>,
+    AUX_MU_LCR_REG: Volatile<u32>,
+    AUX_MU_MCR_REG: Volatile<u32>,
+    AUX_MU_LSR_REG: Volatile<u32>,
+    AUX_MU_MSR_REG: ReadVolatile<u32>,
+    AUX_MU_SCRATCH: Reserved<u32>,
+    AUX_MU_CNTL_REG:Volatile<u32>,
+    AUX_MU_STAT_REG:ReadVolatile<u32>,
+    AUX_MU_BAUD    :Volatile<u32>,
+}
+//树莓派的MiniUart
+pub struct MiniUart {
+    registers: &'static mut Registers,
+    timeout: Option<u32>,
+}
+```
+
+同时为其实现的一些接口函数如下，在其中使用到了GPIO引脚驱动：
+
+```rust
+//生成一个MiniUart实例
+pub fn new() -> MiniUart {}
+//写入byte字节
+pub fn write_byte(&mut self, byte: u8) {}
+//检测是否有等待读取的字节，若有则返回true
+pub fn has_byte(&self) -> bool {} 
+//阻塞直到有字节等待读取
+pub fn wait_for_byte(&self) -> Result<(), ()> {}
+//读取一个字节
+pub fn read_byte(&mut self) -> u8 {} 
+```
+
+该单元主要在shell的实现中使用。
+
+#### 4. 中断控制（```interrupt.rs```）
+
+在AArch64中，中断和异常的主要区别在于中断的产生是异步的，由外部设备响应事件而生成。随之产生的中断流如下：
+
+
+
+![int-chain](final_report.assets/int-chain.svg)
+
+在本项目中，为了产生实现轮转法调度的时间片，需要产生计时中断。在这里主要介绍中断控制驱动。
+
+```rust
+const INT_BASE: usize = IO_BASE + 0xB000 + 0x200;
+//中断编号
+pub enum Interrupt {
+    Timer1 = 1,
+    Timer3 = 3,
+    Usb = 9,
+    Gpio0 = 49,
+    Gpio1 = 50,
+    Gpio2 = 51,
+    Gpio3 = 52,
+    Uart = 57,
+}
+//中断控制相关寄存器
+struct Registers {
+    pending_basic: Reserved<u32>,
+    pending: [ReadVolatile<u32>; 2],
+    fiq: Reserved<u32>,
+    enable: [Volatile<u32>; 2],
+    enable_basic: Reserved<u32>,
+    disable: [Volatile<u32>; 2],
+    disable_basic: Reserved<u32>,
+}
+//中断控制
+pub struct Controller {
+    registers: &'static mut Registers
+}
+```
+
+其中用到的寄存器作用如下：
+
+| 寄存器名称 | 描述             |
+| ---------- | ---------------- |
+| pending    | 储存中断提交状态 |
+| enable     | 中断使能寄存器   |
+| disable    | 中断禁用寄存器   |
+
+我们实现的中断控制驱动应该能够获取设备发送的中断信号并根据当前条件予以处理或放弃，故关于```Controller```必须实现如下的函数，而这些函数主要在OS层面实现中断处理的时候调用：
+
+```rust
+//创建一个中断控制实例
+pub fn new() -> Controller {}
+//启用int类型的中断
+pub fn enable(&mut self, int: Interrupt) {}
+//禁用int类型的中断
+pub fn disable(&mut self, int: Interrupt) {}
+//检测是否收到int类型的中断
+pub fn is_pending(&self, int: Interrupt) -> bool {}
+```
+
+更高层次的中断处理详见“中断”章节。
 
 
 

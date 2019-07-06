@@ -7,7 +7,7 @@ use FILE_SYSTEM;
 #[cfg(not(test))]
 use ALLOCATOR;
 
-use process::sys_sleep;
+use process::{sys_sleep,sys_kill};
 
 const BANNER: &str = r#"
  _               _
