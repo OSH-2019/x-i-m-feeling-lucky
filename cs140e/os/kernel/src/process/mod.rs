@@ -30,7 +30,7 @@ pub fn sys_kill(kill_id: u32) -> bool {
     let error: u64;
     unsafe {
         asm!("mov x0, $1
-              svc 1
+              svc 2
               mov $0, x7"
               : "=r"(error)
               : "r"(kill_id)
@@ -41,4 +41,14 @@ pub fn sys_kill(kill_id: u32) -> bool {
         0 => true,
         _ => false,
     }
+}
+
+pub fn sys_process_terminated(){
+    //let terminated_id: u64;
+    unsafe {
+        asm!("svc 3
+              ")
+    }
+    //if executed succesfully, the content of x7 is 0
+    //terminated_id
 }
