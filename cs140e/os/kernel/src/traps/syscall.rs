@@ -44,6 +44,9 @@ pub fn handle_syscall(num: u16, tf: &mut TrapFrame) {
                 None => 1,
             };
         }
+        3 => {
+            SCHEDULER.remove(tf.TPIDR, tf);
+        }
         //currently unexist, set x7 to 1
         _ => {
             tf.x1_x29[6] = 1;

@@ -9,6 +9,8 @@ use pi::timer::spin_sleep_ms;
 use aarch64;
 use run_shell;
 use run_blinky;
+use run_blinky2;
+use process::sys_process_terminated;
 
 /// The `tick` time.
 // FIXME: When you're ready, change this to something more reasonable.
@@ -62,11 +64,20 @@ impl GlobalScheduler {
         process.trap_frame.SPSR = 0b1101_00_0000;
         let tf = process.trap_frame.clone();
         self.add(process);
+
         let mut process_1 = Process::new().unwrap();
         process_1.trap_frame.ELR = run_blinky as u64;
         process_1.trap_frame.SP = process_1.stack.top().as_u64();
         process_1.trap_frame.SPSR = 0b1101_00_0000;
         self.add(process_1);
+
+        let mut process_2 = Process::new().unwrap();
+        process_2.trap_frame.ELR = run_blinky2 as u64;
+        process_2.trap_frame.SP = process_2.stack.top().as_u64();
+        process_2.trap_frame.SPSR = 0b1101_00_0000;
+        process_2.trap_frame.x30 = sys_process_terminated as u64;
+        self.add(process_2);
+
         Controller::new().enable(Interrupt::Timer1);
         tick_in(TICK);
 

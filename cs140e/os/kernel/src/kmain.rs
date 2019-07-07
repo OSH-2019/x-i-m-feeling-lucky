@@ -76,3 +76,47 @@ pub extern fn run_blinky() {
         sys_sleep(500);
     }
 }
+
+pub extern fn run_blinky2() {
+    let mut ready_led = Gpio::new(16).into_output();
+    ready_led.set();
+    sys_sleep(500);
+    ready_led.clear();
+    sys_sleep(500);
+    ready_led.set();
+    sys_sleep(500);
+    ready_led.clear();
+    sys_sleep(500);
+    ready_led.set();
+    sys_sleep(500);
+    ready_led.clear();
+    sys_sleep(500);
+    ready_led.set();
+    sys_sleep(500);
+    ready_led.clear();
+    sys_sleep(500);
+    ready_led.set();
+    sys_sleep(500);
+    ready_led.clear();
+    sys_sleep(500);
+    ready_led.set();
+    sys_sleep(500);
+    ready_led.clear();
+    sys_sleep(500);
+    ready_led.set();
+    sys_sleep(500);
+    ready_led.clear();
+    sys_sleep(500);
+    ready_led.set();
+    sys_sleep(500);
+    ready_led.clear();
+    sys_sleep(500);
+    ready_led.set();
+    sys_sleep(500);
+    ready_led.clear();
+    sys_sleep(500);
+    ready_led.set();
+    sys_sleep(500);
+    ready_led.clear();
+    sys_sleep(500);
+}
